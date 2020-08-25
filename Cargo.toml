@@ -10,9 +10,11 @@ description = "Pixel Intensity Comparison-based Object (PICO) detection library.
 repository = "https://github.com/rostyslavb/pico-detect"
 readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+derive-new = "0.5"
+nalgebra = "^0.21.0"
+image = "^0.23.0"
+approx = "0.3.2"
 
 [dev-dependencies.cargo-husky]
 version = "1"
