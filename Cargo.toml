@@ -1,0 +1,19 @@
+[package]
+name = "pico-detect"
+version = "0.0.1"
+authors = ["Rostyslav Bohomaz <rostyslav.db@gmail.com>"]
+edition = "2018"
+keywords = ["pico", "detection"]
+categories = ["computer-vision", "wasm"]
+license = "MIT"
+description = "Pixel Intensity Comparison-based Object (PICO) detection library."
+repository = "https://github.com/rostyslavb/pico-detect"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dev-dependencies.cargo-husky]
+version = "1"
+features = ["precommit-hook", "run-cargo-clippy"]
