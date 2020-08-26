@@ -14,7 +14,7 @@ pub fn download(url: &str, path: &Path) -> Result<()> {
     } else {
         Command::new("sh")
             .arg("-c")
-            .arg(format!("curl.exe {} --output {}", url, path.display()))
+            .arg(format!("curl {} --output {}", url, path.display()))
             .output()?
     };
 
