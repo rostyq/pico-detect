@@ -3,7 +3,7 @@ use na::geometry::{Similarity2, Translation2, UnitComplex};
 use na::{Point2, Point3, RealField};
 use std::cmp;
 
-trait Bintest<N: RealField> {
+pub trait Bintest<N: RealField> {
     fn bintest(&self, image: &GrayImage, transform: &Similarity2<N>) -> bool;
 }
 
@@ -26,6 +26,13 @@ impl Leaf {
     }
 }
 
+#[cfg(test)]
+impl PartialEq for Leaf {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+}
+
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ComparisonNode(Leaf, Leaf);
 
@@ -44,6 +51,13 @@ impl ComparisonNode {
     }
 }
 
+#[cfg(test)]
+impl PartialEq for ComparisonNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0 && self.1 == other.1
+    }
+}
+
 impl Bintest<f32> for ComparisonNode {
     fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
         let p0 = self.0.apply_transform(&transform);
@@ -55,11 +69,11 @@ impl Bintest<f32> for ComparisonNode {
     }
 }
 
-pub fn create_leaf_transform<N: RealField>(point: &Point3<N>) -> Similarity2<N> {
+pub fn create_leaf_transform(point: &Point3<f32>) -> Similarity2<f32> {
     Similarity2::from_parts(
         Translation2::new(point.x, point.y),
         UnitComplex::identity(),
-        point.z,
+        point.z / Leaf::SCALE,
     )
 }
 
@@ -84,7 +98,7 @@ mod tests {
     #[test]
     fn apply_leaf_transformation() {
         let leaf = Leaf::new(-42, 34);
-        let roi = Point3::new(100f32, 100f32, 50f32 / Leaf::SCALE);
+        let roi = Point3::new(100f32, 100f32, 50f32);
 
         let test_x = leaf.point().x * roi.z + roi.x;
         let test_y = leaf.point().y * roi.z + roi.y;
@@ -122,7 +136,7 @@ mod tests {
         let point = Point3::new(
             (width as f32) / 2.0,
             (height as f32) / 2.0,
-            (width as f32) / Leaf::SCALE,
+            width as f32,
         );
         let transform = create_leaf_transform(&point);
         let result = node.bintest(&image, &transform);
