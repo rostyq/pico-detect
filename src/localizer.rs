@@ -108,7 +108,7 @@ impl Localizer {
 #[cfg(test)]
 mod tests {
     use image::DynamicImage;
-    use std::fs::File;
+    use std::fs::{File, create_dir};
     use std::io::{BufRead, BufReader};
     use std::path::Path;
 
@@ -116,7 +116,7 @@ mod tests {
     use crate::models::download_puploc;
 
     fn load_model() -> Localizer {
-        let path = Path::new("./models/puploc.bin");
+        let path = Path::new("./assets/puploc.bin");
 
         if !path.exists() {
             download_puploc(path).expect("model download error");
@@ -201,7 +201,13 @@ mod tests {
 
     #[test]
     fn check_pupil_localization() {
-        let image_path = Path::new("./assets/test_image.jpg");
+        let assets_dir = Path::new("./assets/");
+
+        if !assets_dir.exists() {
+            create_dir(&assets_dir).expect("cannot create assets dir for testing");
+        }
+
+        let image_path = assets_dir.join("test_image.jpg");
         let puploc = load_model();
         let image = load_test_image(&image_path);
         let (left_pupil, right_pupil) = load_test_data(&image_path.with_extension("eye"));
