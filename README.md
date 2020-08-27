@@ -4,10 +4,10 @@ Rust library for _Pixel Intensity Comparison-based Object_ (PICO) detection.
 
 ## Goals
 
-[] object detection;
-[x] object localization;
-[] shape prediction;
-[] WebAssembly support (`wasm32-unknown-unknown` target).
+* [ ] object detection;
+* [x] object localization;
+* [ ] shape prediction;
+* [ ] WebAssembly support (`wasm32-unknown-unknown` target).
 
 ## Links
 
