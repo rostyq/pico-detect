@@ -29,3 +29,6 @@ features = ["precommit-hook", "run-cargo-clippy"]
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[lib]
+bench = false
