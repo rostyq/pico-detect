@@ -156,15 +156,9 @@ mod tests {
     use rand_xorshift::XorShiftRng;
 
     use super::*;
-    use crate::models::download_puploc;
 
     fn load_model() -> Localizer {
         let path = Path::new("./models/puploc.bin");
-
-        if !path.exists() {
-            download_puploc(path).expect("model download error");
-        }
-
         let fp = File::open(path).unwrap();
         Localizer::from_readable(fp).unwrap()
     }
