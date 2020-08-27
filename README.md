@@ -1,4 +1,4 @@
-# `pico-detect`
+# pico-detect
 
 Rust library for _Pixel Intensity Comparison-based Object_ (PICO) detection.
 
