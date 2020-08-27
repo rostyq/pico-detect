@@ -10,7 +10,9 @@ extern crate derive_new;
 #[macro_use]
 extern crate approx;
 
-pub mod core;
-pub mod localizer;
+mod core;
+mod localizer;
+pub use localizer::Localizer;
+pub use crate::core::create_xorshift_rng;
 
 pub mod test_utils;

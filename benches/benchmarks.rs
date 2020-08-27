@@ -3,10 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-use rand::SeedableRng;
-use rand_xorshift::XorShiftRng;
-
-use pico_detect::localizer::Localizer;
+use pico_detect::{Localizer, create_xorshift_rng};
 use pico_detect::test_utils::*;
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -31,7 +28,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| puploc.localize(&image, &init_point))
     });
 
-    let mut rng = XorShiftRng::seed_from_u64(42u64);
+    let mut rng = create_xorshift_rng(42u64);
 
     let mut group = c.benchmark_group("Localizer.perturb_localize");
     for nperturbs in [15, 23, 31].iter() {

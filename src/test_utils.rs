@@ -16,8 +16,7 @@ pub fn create_test_image(width: u32, height: u32) -> GrayImage {
 }
 
 pub fn load_model() -> Localizer {
-    let path = Path::new("./models/puploc.bin");
-    let fp = File::open(path).unwrap();
+    let fp = File::open("./models/puploc.bin").unwrap();
     Localizer::from_readable(fp).unwrap()
 }
 
