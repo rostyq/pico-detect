@@ -12,3 +12,5 @@ extern crate approx;
 
 pub mod core;
 pub mod localizer;
+
+pub mod test_utils;
