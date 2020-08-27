@@ -2,13 +2,13 @@ use std::io::{Error, ErrorKind, Read};
 
 use super::core::{create_leaf_transform, Bintest, ComparisonNode};
 use image::GrayImage;
-use na::{Point2, Point3, Vector2};
+use na::{Point2, Point3, Vector2, Translation2};
 
 use rand::distributions::Uniform;
 use rand::{Rng, RngCore};
 
 type Tree = Vec<ComparisonNode>;
-type Predictions = Vec<Point2<f32>>;
+type Predictions = Vec<Vector2<f32>>;
 type Stage = Vec<(Tree, Predictions)>;
 type Stages = Vec<Stage>;
 
@@ -21,34 +21,28 @@ pub struct Localizer {
 }
 
 impl Localizer {
-    pub fn localize(&self, image: &GrayImage, roi: &Point3<f32>) -> Point2<f32> {
-        let mut point = roi.xy();
-        self.localize_mut(image, &mut point, roi.z);
-        point.xy()
-    }
+    pub fn localize(&self, image: &GrayImage, point: &Point3<f32>) -> Point2<f32> {
+        let mut transform = create_leaf_transform(&point);
 
-    pub fn localize_mut(&self, image: &GrayImage, point: &mut Point2<f32>, size: f32) {
-        let mut size = size;
-        let mut dvec = Vector2::new(0.0, 0.0);
         for stage in self.stages.iter() {
-            let transform = create_leaf_transform(&point, size);
+            let mut translation = Translation2::identity();
 
             for (codes, preds) in stage.iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    2 * idx + 1 + codes[idx].bintest(image, &transform) as usize
+                    2 * idx + 1 + codes[idx].bintest(&image, &transform) as usize
                 });
                 let lutidx = idx.saturating_sub(self.dsize) + 1;
 
-                dvec += preds[lutidx].coords;
+                translation.vector += preds[lutidx];
             }
 
-            dvec.scale_mut(size);
-            point.coords += dvec;
-            dvec.x = 0.0;
-            dvec.y = 0.0;
+            translation.vector.scale_mut(point.z);
+            transform.append_translation_mut(&translation);
 
-            size *= self.scale;
+            transform.prepend_scaling_mut(self.scale);
         }
+
+        Point2::from(transform.isometry.translation.vector)
     }
 
     pub fn perturb_localize(
@@ -60,19 +54,19 @@ impl Localizer {
     ) -> Point2<f32> {
         let mut xs: Vec<f32> = Vec::with_capacity(nperturbs);
         let mut ys: Vec<f32> = Vec::with_capacity(nperturbs);
+        let mut point = roi.clone();
 
         // println!("\ninit: {}", roi);
         for _ in 0..nperturbs {
-            let size = rng.sample(self.distrs.0) * roi.z;
-            let x = roi.z.mul_add(rng.sample(self.distrs.1), roi.x);
-            let y = roi.z.mul_add(rng.sample(self.distrs.1), roi.y);
-            let mut point = Point2::new(x, y);
+            point.z = rng.sample(self.distrs.0) * roi.z;
+            point.x = roi.z.mul_add(rng.sample(self.distrs.1), roi.x);
+            point.y = roi.z.mul_add(rng.sample(self.distrs.1), roi.y);
 
             // println!("rand: {}", _roi);
-            self.localize_mut(image, &mut point, size);
+            let result = self.localize(image, &point);
 
-            xs.push(point.x);
-            ys.push(point.y);
+            xs.push(result.x);
+            ys.push(result.y);
         }
 
         Point2::new(odd_median_mut(&mut xs), odd_median_mut(&mut ys))
@@ -119,7 +113,7 @@ impl Localizer {
                     readable.read_exact(&mut buffer)?;
                     let x = f32::from_le_bytes(buffer);
 
-                    predictions.push(Point2::new(x, y));
+                    predictions.push(Vector2::new(x, y));
                 }
 
                 stage.push((tree, predictions));
@@ -174,8 +168,8 @@ mod tests {
             stages[stages.len() - 1][trees - 1].0[dsize - 1 - 1]
         );
 
-        let first_pred_test = Point2::new(-0.08540829, 0.04436668);
-        let last_pred_test = Point2::new(0.05820565, 0.02249731);
+        let first_pred_test = Vector2::new(-0.08540829, 0.04436668);
+        let last_pred_test = Vector2::new(0.05820565, 0.02249731);
         let first_pred = stages[0][0].1[0];
         let last_pred = stages[stages.len() - 1][trees - 1].1[dsize - 1];
         assert_abs_diff_eq!(first_pred_test, first_pred);

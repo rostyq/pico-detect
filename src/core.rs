@@ -1,7 +1,7 @@
 use image::GrayImage;
-use na::{Point2, RealField};
+use na::{Point2, Point3, RealField};
 use na::geometry::{Similarity2, Translation2, UnitComplex};
-use std::cmp;
+use std::cmp::Ordering;
 
 pub trait Bintest<N: RealField> {
     fn bintest(&self, image: &GrayImage, transform: &Similarity2<N>) -> bool;
@@ -71,17 +71,24 @@ impl Bintest<f32> for ComparisonNode {
     }
 }
 
-pub fn create_leaf_transform(point: &Point2<f32>, size: f32) -> Similarity2<f32> {
+pub fn create_leaf_transform(point: &Point3<f32>) -> Similarity2<f32> {
     Similarity2::from_parts(
-        Translation2::from(point.coords),
+        Translation2::new(point.x, point.y),
         UnitComplex::identity(),
-        size / Leaf::SCALE,
+        point.z / Leaf::SCALE,
     )
 }
 
+fn saturate_bound(value: u32, bound: u32) -> u32 {
+    match value.cmp(&bound) {
+        Ordering::Less => value,
+        _ => bound - 1,
+    }
+}
+
 fn get_safe_luminance(image: &GrayImage, point: &Point2<f32>) -> u8 {
-    let x = cmp::min(point.x.round() as u32, image.width() - 1);
-    let y = cmp::min(point.y.round() as u32, image.height() - 1);
+    let x = saturate_bound(point.x.round() as u32, image.width());
+    let y = saturate_bound(point.y.round() as u32, image.height());
     image.get_pixel(x, y).0[0]
 }
 
@@ -93,13 +100,12 @@ mod tests {
     #[test]
     fn apply_leaf_transformation() {
         let leaf = Leaf::new(-42, 34);
-        let roi = Point2::new(100f32, 100f32);
-        let size = 50f32;
+        let roi = Point3::new(100f32, 100f32, 50f32);
 
-        let test_x = leaf.point().x * size + roi.x;
-        let test_y = leaf.point().y * size + roi.y;
+        let test_x = leaf.point().x * roi.z + roi.x;
+        let test_y = leaf.point().y * roi.z + roi.y;
 
-        let transform = create_leaf_transform(&roi, size);
+        let transform = create_leaf_transform(&roi);
         let point = leaf.apply_transform(&transform);
 
         abs_diff_eq!(point.x, test_x);
@@ -129,11 +135,12 @@ mod tests {
         let image = create_test_image(width, height);
         let node = ComparisonNode::new([i8::MAX, i8::MAX, i8::MIN, i8::MIN]);
 
-        let point = Point2::new(
+        let point = Point3::new(
             (width as f32) / 2.0,
             (height as f32) / 2.0,
+            width as f32,
         );
-        let transform = create_leaf_transform(&point, width as f32);
+        let transform = create_leaf_transform(&point);
         let result = node.bintest(&image, &transform);
         assert!(result);
     }
