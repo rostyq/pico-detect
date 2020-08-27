@@ -1,6 +1,6 @@
 use image::GrayImage;
+use na::{Point2, RealField};
 use na::geometry::{Similarity2, Translation2, UnitComplex};
-use na::{Point2, Point3, RealField};
 use std::cmp;
 
 pub trait Bintest<N: RealField> {
@@ -8,7 +8,8 @@ pub trait Bintest<N: RealField> {
 }
 
 #[derive(new)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
+// #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Leaf {
     x: i8,
     y: i8,
@@ -33,7 +34,8 @@ impl PartialEq for Leaf {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
+// #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ComparisonNode(Leaf, Leaf);
 
 impl ComparisonNode {
@@ -69,11 +71,11 @@ impl Bintest<f32> for ComparisonNode {
     }
 }
 
-pub fn create_leaf_transform(point: &Point3<f32>) -> Similarity2<f32> {
+pub fn create_leaf_transform(point: &Point2<f32>, size: f32) -> Similarity2<f32> {
     Similarity2::from_parts(
-        Translation2::new(point.x, point.y),
+        Translation2::from(point.coords),
         UnitComplex::identity(),
-        point.z / Leaf::SCALE,
+        size / Leaf::SCALE,
     )
 }
 
@@ -86,24 +88,18 @@ fn get_safe_luminance(image: &GrayImage, point: &Point2<f32>) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn create_test_image(width: u32, height: u32) -> GrayImage {
-        use image::Luma;
-        let mut image = GrayImage::new(width, height);
-        image.put_pixel(0, 0, Luma::from([42u8]));
-        image.put_pixel(width - 1, height - 1, Luma::from([255u8]));
-        image
-    }
+    use crate::test_utils::create_test_image;
 
     #[test]
     fn apply_leaf_transformation() {
         let leaf = Leaf::new(-42, 34);
-        let roi = Point3::new(100f32, 100f32, 50f32);
+        let roi = Point2::new(100f32, 100f32);
+        let size = 50f32;
 
-        let test_x = leaf.point().x * roi.z + roi.x;
-        let test_y = leaf.point().y * roi.z + roi.y;
+        let test_x = leaf.point().x * size + roi.x;
+        let test_y = leaf.point().y * size + roi.y;
 
-        let transform = create_leaf_transform(&roi);
+        let transform = create_leaf_transform(&roi, size);
         let point = leaf.apply_transform(&transform);
 
         abs_diff_eq!(point.x, test_x);
@@ -133,12 +129,11 @@ mod tests {
         let image = create_test_image(width, height);
         let node = ComparisonNode::new([i8::MAX, i8::MAX, i8::MIN, i8::MIN]);
 
-        let point = Point3::new(
+        let point = Point2::new(
             (width as f32) / 2.0,
             (height as f32) / 2.0,
-            width as f32,
         );
-        let transform = create_leaf_transform(&point);
+        let transform = create_leaf_transform(&point, width as f32);
         let result = node.bintest(&image, &transform);
         assert!(result);
     }

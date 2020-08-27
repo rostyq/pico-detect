@@ -22,34 +22,32 @@ pub struct Localizer {
 
 impl Localizer {
     pub fn localize(&self, image: &GrayImage, roi: &Point3<f32>) -> Point2<f32> {
-        let mut roi = roi.clone();
-        self.localize_mut(image, &mut roi);
-        roi.xy()
+        let mut point = roi.xy();
+        self.localize_mut(image, &mut point, roi.z);
+        point.xy()
     }
 
-    pub fn localize_mut(&self, image: &GrayImage, point: &mut Point3<f32>) {
+    pub fn localize_mut(&self, image: &GrayImage, point: &mut Point2<f32>, size: f32) {
+        let mut size = size;
+        let mut dvec = Vector2::new(0.0, 0.0);
         for stage in self.stages.iter() {
-            let mut dvec = Vector2::new(0.0, 0.0);
+            let transform = create_leaf_transform(&point, size);
 
             for (codes, preds) in stage.iter() {
-                let transform = create_leaf_transform(&point);
-
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    let bintest = codes[idx].bintest(image, &transform);
-                    2 * idx + 1 + bintest as usize
+                    2 * idx + 1 + codes[idx].bintest(image, &transform) as usize
                 });
                 let lutidx = idx.saturating_sub(self.dsize) + 1;
 
-                let pred = &preds[lutidx];
-
-                dvec.x += pred.x;
-                dvec.y += pred.y;
+                dvec += preds[lutidx].coords;
             }
 
-            point.x += dvec.x * point.z;
-            point.y += dvec.y * point.z;
+            dvec.scale_mut(size);
+            point.coords += dvec;
+            dvec.x = 0.0;
+            dvec.y = 0.0;
 
-            point.z *= self.scale;
+            size *= self.scale;
         }
     }
 
@@ -65,16 +63,16 @@ impl Localizer {
 
         // println!("\ninit: {}", roi);
         for _ in 0..nperturbs {
-            let z = rng.sample(self.distrs.0) * roi.z;
+            let size = rng.sample(self.distrs.0) * roi.z;
             let x = roi.z.mul_add(rng.sample(self.distrs.1), roi.x);
             let y = roi.z.mul_add(rng.sample(self.distrs.1), roi.y);
-            let mut _roi = Point3::new(x, y, z);
+            let mut point = Point2::new(x, y);
 
             // println!("rand: {}", _roi);
-            self.localize_mut(image, &mut _roi);
+            self.localize_mut(image, &mut point, size);
 
-            xs.push(_roi.x);
-            ys.push(_roi.y);
+            xs.push(point.x);
+            ys.push(point.y);
         }
 
         Point2::new(odd_median_mut(&mut xs), odd_median_mut(&mut ys))
@@ -147,54 +145,13 @@ pub fn odd_median_mut(numbers: &mut Vec<f32>) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use image::DynamicImage;
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
     use std::path::Path;
 
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
 
     use super::*;
-
-    fn load_model() -> Localizer {
-        let path = Path::new("./models/puploc.bin");
-        let fp = File::open(path).unwrap();
-        Localizer::from_readable(fp).unwrap()
-    }
-
-    fn load_test_image(path: &Path) -> GrayImage {
-        match image::open(path).unwrap() {
-            DynamicImage::ImageLuma8(image) => image,
-            _ => panic!("invalid test image"),
-        }
-    }
-
-    fn create_init_point(point: &Point2<f32>) -> Point3<f32> {
-        let mut init_point = point.xyx();
-        init_point.x += 5.0;
-        init_point.y += 5.0;
-        init_point.z = 40.0;
-        init_point
-    }
-
-    fn load_test_data(path: &Path) -> (Point2<f32>, Point2<f32>) {
-        let file = File::open(path).unwrap();
-        let mut reader = BufReader::new(file);
-
-        let mut buf = String::new();
-        reader.read_line(&mut buf).expect("no first line");
-        buf.clear();
-
-        reader.read_line(&mut buf).expect("no data");
-        let data = buf
-            .trim()
-            .split("\t")
-            .filter_map(|s| s.parse::<f32>().ok())
-            .collect::<Vec<_>>();
-
-        (Point2::new(data[0], data[1]), Point2::new(data[2], data[3]))
-    }
+    use crate::test_utils::*;
 
     #[test]
     fn check_pupil_localizer_model_parsing() {
