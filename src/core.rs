@@ -1,7 +1,11 @@
+use std::cmp::Ordering;
+
 use image::GrayImage;
 use na::{Point2, Point3, RealField};
 use na::geometry::{Similarity2, Translation2, UnitComplex};
-use std::cmp::Ordering;
+
+use rand::SeedableRng;
+use rand_xorshift::XorShiftRng;
 
 pub trait Bintest<N: RealField> {
     fn bintest(&self, image: &GrayImage, transform: &Similarity2<N>) -> bool;
@@ -90,6 +94,10 @@ fn get_safe_luminance(image: &GrayImage, point: &Point2<f32>) -> u8 {
     let x = saturate_bound(point.x.round() as u32, image.width());
     let y = saturate_bound(point.y.round() as u32, image.height());
     image.get_pixel(x, y).0[0]
+}
+
+pub fn create_xorshift_rng(seed: u64) -> XorShiftRng {
+    XorShiftRng::seed_from_u64(seed)
 }
 
 #[cfg(test)]

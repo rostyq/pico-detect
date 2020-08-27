@@ -1,3 +1,4 @@
 /target
 Cargo.lock
 assets/*.bin
+result.jpg
