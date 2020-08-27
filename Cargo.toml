@@ -9,12 +9,15 @@ license = "MIT"
 description = "Pixel Intensity Comparison-based Object (PICO) detection library."
 repository = "https://github.com/rostyslavb/pico-detect"
 readme = "README.md"
+exclude = ["assets", "models"]
 
 [dependencies]
 derive-new = "0.5"
 nalgebra = "^0.21.0"
 image = "^0.23.0"
 approx = "0.3.2"
+rand = "^0.7.0"
+rand_xorshift = "^0.2.0"
 
 [dev-dependencies.cargo-husky]
 version = "1"
