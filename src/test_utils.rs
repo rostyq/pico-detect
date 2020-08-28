@@ -6,6 +6,7 @@ use image::{DynamicImage, GrayImage};
 use na::{Point2, Point3};
 
 use super::localizer::Localizer;
+use super::detector::Detector;
 
 pub fn create_test_image(width: u32, height: u32) -> GrayImage {
     use image::Luma;
@@ -15,9 +16,14 @@ pub fn create_test_image(width: u32, height: u32) -> GrayImage {
     image
 }
 
-pub fn load_model() -> Localizer {
+pub fn load_puploc_model() -> Localizer {
     let fp = File::open("./models/puploc.bin").unwrap();
     Localizer::from_readable(fp).unwrap()
+}
+
+pub fn load_facefinder_model() -> Detector {
+    let fp = File::open("./models/facefinder").unwrap();
+    Detector::from_readable(fp).unwrap()
 }
 
 pub fn load_test_image(path: &Path) -> GrayImage {

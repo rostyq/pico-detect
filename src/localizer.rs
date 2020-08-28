@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn check_pupil_localizer_model_parsing() {
-        let puploc = load_model();
+        let puploc = load_puploc_model();
         let stages = &puploc.stages;
         let trees = stages[0].len();
 
@@ -251,7 +251,7 @@ mod tests {
         let assets_dir = Path::new("./assets/");
 
         let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
-        let puploc = load_model();
+        let puploc = load_puploc_model();
         let image = load_test_image(&image_path);
         let (left_pupil, right_pupil) = load_test_data(&image_path.with_extension("txt"));
 
@@ -268,7 +268,7 @@ mod tests {
         let assets_dir = Path::new("./assets/");
 
         let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
-        let puploc = load_model();
+        let puploc = load_puploc_model();
         let image = load_test_image(&image_path);
         let (left_pupil, right_pupil) = load_test_data(&image_path.with_extension("txt"));
 
