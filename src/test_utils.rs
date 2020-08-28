@@ -26,11 +26,19 @@ pub fn load_facefinder_model() -> Detector {
     Detector::from_readable(fp).unwrap()
 }
 
-pub fn load_test_image(path: &Path) -> GrayImage {
+pub fn load_image(path: &Path) -> GrayImage {
     match image::open(path).unwrap() {
         DynamicImage::ImageLuma8(image) => image,
         _ => panic!("invalid test image"),
     }
+}
+
+pub fn load_test_image() -> (GrayImage, (Point2<f32>, Point2<f32>)){
+    let assets_dir = Path::new("./assets/");
+    let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
+    let image = load_image(&image_path);
+    let data = load_data(&image_path.with_extension("txt"));
+    (image, data)
 }
 
 pub fn create_init_point(point: &Point2<f32>) -> Point3<f32> {
@@ -41,7 +49,7 @@ pub fn create_init_point(point: &Point2<f32>) -> Point3<f32> {
     init_point
 }
 
-pub fn load_test_data(path: &Path) -> (Point2<f32>, Point2<f32>) {
+pub fn load_data(path: &Path) -> (Point2<f32>, Point2<f32>) {
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
 
