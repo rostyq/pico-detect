@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 
-use image::{GrayImage, GenericImageView};
-use na::{Point2, Point3};
+use image::{GenericImageView, GrayImage};
 use na::geometry::{Similarity2, Translation2, UnitComplex};
+use na::{Point2, Point3};
 
 use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
@@ -14,12 +14,16 @@ pub struct ComparisonNode {
     right: Point2<i8>,
 }
 
+pub trait Bintest<T> {
+    fn bintest(&self, image: &GrayImage, transform: &T) -> bool;
+}
+
 impl ComparisonNode {
     pub fn new(data: [i8; 4]) -> Self {
         let [y0, x0, y1, x1] = data;
         Self {
             left: Point2::new(x0, y0),
-            right: Point2::new(x1, y1)
+            right: Point2::new(x1, y1),
         }
     }
 
@@ -31,27 +35,66 @@ impl ComparisonNode {
         Self::new(data)
     }
 
-    #[inline]
-    fn integer_transform(transform: &Similarity2<f32>, point: &Point2<i8>) -> Point2<u32> {
-        let x = transform.isometry.translation.x.round() as i32;
-        let y = transform.isometry.translation.y.round() as i32;
-        let size = transform.scaling() as i32;
+}
 
-        let x = (((x * 256) + (point.x as i32) * size) / 256) as u32;
-        let y = (((y * 256) + (point.y as i32) * size) / 256) as u32;
-        Point2::new(x, y)
+#[inline]
+fn find_lum_by_similarity(
+    image: &GrayImage,
+    transform: &Similarity2<f32>,
+    point: &Point2<i8>,
+) -> u8 {
+    let point = transform_by_similarity(transform, point);
+    image.safe_get_lum(point.x, point.y)
+}
+
+#[inline]
+fn transform_by_similarity(transform: &Similarity2<f32>, point: &Point2<i8>) -> Point2<u32> {
+    let x = transform.isometry.translation.x.round() as i32;
+    let y = transform.isometry.translation.y.round() as i32;
+    let size = transform.scaling() as i32;
+
+    transform_fast(point, x, y, size)
+}
+
+impl Bintest<Similarity2<f32>> for ComparisonNode {
+    #[inline]
+    fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
+        let lum0 = find_lum_by_similarity(image, transform, &self.left);
+        let lum1 = find_lum_by_similarity(image, transform, &self.right);
+        lum0 > lum1
     }
+}
 
-    #[inline]
-    fn find_lum(image: &GrayImage, transform: &Similarity2<f32>, point: &Point2<i8>) -> u8 {
-        let point = Self::integer_transform(transform, point);
-        image.safe_get_lum(point.x, point.y)
-    }
+#[inline]
+fn find_lum_by_usize(
+    image: &GrayImage,
+    transform: &Point3<usize>,
+    point: &Point2<i8>,
+) -> u8 {
+    let point = transform_by_usize(transform, point);
+    image.safe_get_lum(point.x, point.y)
+}
 
+#[inline]
+fn transform_by_usize(transform: &Point3<usize>, point: &Point2<i8>) -> Point2<u32> {
+    let x = transform.x as i32;
+    let y = transform.y as i32;
+    let size = transform.z as i32;
+    transform_fast(point, x, y, size)
+}
+
+#[inline]
+fn transform_fast(point: &Point2<i8>, x: i32, y: i32, size: i32) -> Point2<u32> {
+    let x = (((x * 256) + (point.x as i32) * size) / 256) as u32;
+    let y = (((y * 256) + (point.y as i32) * size) / 256) as u32;
+    Point2::new(x, y)
+}
+
+impl Bintest<Point3<usize>> for ComparisonNode {
     #[inline]
-    pub fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
-        let lum0 = Self::find_lum(image, transform, &self.left);
-        let lum1 = Self::find_lum(image, transform, &self.right);
+    fn bintest(&self, image: &GrayImage, transform: &Point3<usize>) -> bool {
+        let lum0 = find_lum_by_usize(image, transform, &self.left);
+        let lum1 = find_lum_by_usize(image, transform, &self.right);
         lum0 > lum1
     }
 }
@@ -116,11 +159,7 @@ mod tests {
         let image = create_test_image(width, height);
         let node = ComparisonNode::new([i8::MAX, i8::MAX, i8::MIN, i8::MIN]);
 
-        let point = Point3::new(
-            (width as f32) / 2.0,
-            (height as f32) / 2.0,
-            width as f32,
-        );
+        let point = Point3::new((width as f32) / 2.0, (height as f32) / 2.0, width as f32);
         let transform = create_leaf_transform(&point);
         let result = node.bintest(&image, &transform);
         assert!(result);

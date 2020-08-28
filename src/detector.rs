@@ -1,8 +1,8 @@
-use na::{Point3, Similarity2};
+use na::Point3;
 
 use image::GrayImage;
 
-use crate::core::{create_leaf_transform, ComparisonNode};
+use crate::core::{Bintest, ComparisonNode};
 use std::cmp;
 use std::io::{Error, ErrorKind, Read};
 
@@ -19,12 +19,12 @@ pub struct Detector {
 }
 
 impl Detector {
-    fn classify_region(&self, image: &GrayImage, transform: &Similarity2<f32>) -> Option<f32> {
+    fn classify_region(&self, image: &GrayImage, transform: &Point3<usize>) -> Option<f32> {
         let mut result = 0.0f32;
 
         for tree in self.trees.iter() {
             let idx = (0..self.depth).fold(1, |idx, _| {
-                2 * idx + tree.nodes[idx].bintest(&image, &transform) as usize
+                2 * idx + tree.nodes[idx].bintest(image, transform) as usize
             });
             let lutidx = idx.saturating_sub(self.dsize);
             result += tree.predictions[lutidx];
@@ -39,29 +39,28 @@ impl Detector {
     pub fn run_cascade(
         &self,
         image: &GrayImage,
-        min_size: u32,
-        max_size: u32,
-        shift_factor: u32,
+        min_size: usize,
+        max_size: usize,
+        shift_factor: f32,
         scale_factor: f32,
-    ) -> Vec<(Point3<f32>, f32)> {
+    ) -> Vec<(Point3<usize>, f32)> {
         let mut detections = Vec::with_capacity(self.trees.len());
         let (width, height) = (image.width() as usize, image.height() as usize);
         let mut size = min_size;
 
         while size <= max_size {
-            let step = cmp::max(shift_factor * size, 1u32) as usize;
-            let offset = (size / 2 + 1) as usize;
+            let step = cmp::max((shift_factor * (size as f32)) as usize, 1);
+            let offset = size / 2 + 1;
 
             for y in (offset..(height - offset)).step_by(step) {
                 for x in (offset..(width - offset)).step_by(step) {
-                    let point = Point3::new(x as f32, y as f32, size as f32);
-                    let transform = create_leaf_transform(&point);
-                    if let Some(probability) = self.classify_region(&image, &transform) {
-                        detections.push((point, probability));
+                    let point = Point3::new(x, y, size);
+                    if let Some(score) = self.classify_region(&image, &point) {
+                        detections.push((point, score));
                     }
                 }
-                size = ((size as f32) * scale_factor) as u32;
             }
+            size = ((size as f32) * scale_factor) as usize;
         }
 
         detections
@@ -119,6 +118,15 @@ impl Detector {
     }
 }
 
+#[allow(dead_code)]
+fn calculate_iou(p0: &Point3<usize>, p1: &Point3<usize>) -> f32 {
+    let (s0, s1) = (p0.z / 2, p1.z / 2);
+    let ox = cmp::min(p0.x + s0, p1.x + s1).saturating_sub(cmp::max(p0.x + s0, p1.x + s1));
+    let oy = cmp::min(p0.y + s0, p1.y + s1).saturating_sub(cmp::max(p0.y + s0, p1.y + s1));
+    let square = ox * oy;
+    (square as f32) / ((s0 * s0 + s1 * s1).saturating_sub(square) as f32)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,14 +165,14 @@ mod tests {
         let (image, _data) = load_test_image();
 
         let min_size = 50;
-        let max_size = 200;
-        let shift_factor = 10;
+        let max_size = 300;
+        let shift_factor = 0.1;
         let scale_factor = 1.1;
         let detections =
             facefinder.run_cascade(&image, min_size, max_size, shift_factor, scale_factor);
 
         for (point, probability) in detections {
-            println!("point: {}, probability: {}", point, probability);
+            println!("point: {}, score: {}", point, probability);
         }
     }
 }
