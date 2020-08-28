@@ -1,6 +1,6 @@
 use std::io::{Error, ErrorKind, Read};
 
-use super::core::{create_leaf_transform, ComparisonNode};
+use super::core::{create_leaf_transform, ComparisonNode, Bintest};
 use image::GrayImage;
 use na::{Point2, Point3, Translation2, Vector2};
 
@@ -89,7 +89,7 @@ impl Localizer {
 
             for (codes, preds) in stage.iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    2 * idx + 1 + unsafe { codes.get_unchecked(idx) }.bintest(&image, &transform) as usize
+                    2 * idx + 1 + unsafe { codes.get_unchecked(idx) }.bintest(image, &transform) as usize
                 });
                 let lutidx = idx.saturating_sub(self.dsize) + 1;
 
