@@ -3,12 +3,11 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-use pico_detect::{Localizer, create_xorshift_rng};
+use pico_detect::{Detector, Localizer, create_xorshift_rng};
 use pico_detect::test_utils::*;
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let path = Path::new("./models/puploc.bin");
-    let mut fp = File::open(&path).unwrap();
+    let mut fp = File::open("./models/puploc.bin").unwrap();
     let mut data = Vec::with_capacity(1200 * 1024);
     fp.read_to_end(&mut data).unwrap();
 
@@ -19,7 +18,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let assets_dir = Path::new("./assets/");
 
     let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
-    let puploc = load_model();
+    let puploc = load_puploc_model();
     let image = load_test_image(&image_path);
     let (left_pupil, _) = load_test_data(&image_path.with_extension("txt"));
     let init_point = create_init_point(&left_pupil);
@@ -37,6 +36,14 @@ fn criterion_benchmark(c: &mut Criterion) {
         });
     }
     group.finish();
+
+    let mut fp = File::open("./models/facefinder").unwrap();
+    let mut data = Vec::with_capacity(235 * 1024);
+    fp.read_to_end(&mut data).unwrap();
+
+    c.bench_function("Detector::from_readable", |b| {
+        b.iter(|| Detector::from_readable(data.as_slice()).unwrap())
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

@@ -12,7 +12,10 @@ extern crate approx;
 
 mod core;
 mod localizer;
+mod detector;
+
 pub use localizer::Localizer;
+pub use detector::Detector;
 pub use crate::core::create_xorshift_rng;
 
 pub mod test_utils;

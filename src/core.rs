@@ -29,6 +29,10 @@ impl Leaf {
     pub fn apply_transform(&self, transform: &Similarity2<f32>) -> Point2<f32> {
         transform.transform_point(&self.point())
     }
+
+    pub fn find_lum_value(&self, image: &GrayImage, transform: &Similarity2<f32>) -> u8 {
+        get_safe_luminance(image, &self.apply_transform(&transform))
+    }
 }
 
 #[cfg(test)]
@@ -66,11 +70,8 @@ impl PartialEq for ComparisonNode {
 
 impl Bintest<f32> for ComparisonNode {
     fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
-        let p0 = self.0.apply_transform(&transform);
-        let p1 = self.1.apply_transform(&transform);
-
-        let lum0 = get_safe_luminance(image, &p0);
-        let lum1 = get_safe_luminance(image, &p1);
+        let lum0 = self.0.find_lum_value(image, transform);
+        let lum1 = self.1.find_lum_value(image, transform);
         lum0 > lum1
     }
 }
