@@ -1,7 +1,6 @@
 use criterion::{BenchmarkId, criterion_group, criterion_main, Criterion};
 use std::fs::File;
 use std::io::Read;
-use std::path::Path;
 
 use pico_detect::{Detector, Localizer, create_xorshift_rng};
 use pico_detect::test_utils::*;
@@ -15,12 +14,8 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| Localizer::from_readable(data.as_slice()).unwrap())
     });
 
-    let assets_dir = Path::new("./assets/");
-
-    let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
     let puploc = load_puploc_model();
-    let image = load_test_image(&image_path);
-    let (left_pupil, _) = load_test_data(&image_path.with_extension("txt"));
+    let (image, (left_pupil, _)) = load_test_image();
     let init_point = create_init_point(&left_pupil);
 
     c.bench_function("Localizer.localize", |b| {

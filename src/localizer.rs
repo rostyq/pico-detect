@@ -2,7 +2,7 @@ use std::io::{Error, ErrorKind, Read};
 
 use super::core::{create_leaf_transform, Bintest, ComparisonNode};
 use image::GrayImage;
-use na::{Point2, Point3, Vector2, Translation2};
+use na::{Point2, Point3, Translation2, Vector2};
 
 use rand::distributions::Uniform;
 use rand::{Rng, RngCore};
@@ -37,7 +37,7 @@ type Stages = Vec<Stage>;
 /// let mut rng = create_xorshift_rng(42u64);
 /// let init_point = Point3::new(270f32, 270f32, 40f32);
 /// let nperturbs = 31usize;
-/// 
+///
 /// // find pupil center
 /// let pupil_point = puploc.perturb_localize(
 ///   &gray,
@@ -45,7 +45,7 @@ type Stages = Vec<Stage>;
 ///   &mut rng,
 ///   nperturbs
 /// );
-/// 
+///
 /// // draw red cross on the image
 /// let mut palette = Vec::with_capacity(255);
 /// for i in 0..255 {
@@ -211,8 +211,6 @@ fn odd_median_mut(numbers: &mut Vec<f32>) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
     use crate::create_xorshift_rng;
     use crate::test_utils::*;
@@ -248,12 +246,8 @@ mod tests {
 
     #[test]
     fn check_pupil_localization() {
-        let assets_dir = Path::new("./assets/");
-
-        let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
         let puploc = load_puploc_model();
-        let image = load_test_image(&image_path);
-        let (left_pupil, right_pupil) = load_test_data(&image_path.with_extension("txt"));
+        let (image, (left_pupil, right_pupil)) = load_test_image();
 
         let epsilon = 3f32;
         let pred = puploc.localize(&image, &create_init_point(&left_pupil));
@@ -265,12 +259,8 @@ mod tests {
 
     #[test]
     fn check_perturbated_pupil_localization() {
-        let assets_dir = Path::new("./assets/");
-
-        let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
         let puploc = load_puploc_model();
-        let image = load_test_image(&image_path);
-        let (left_pupil, right_pupil) = load_test_data(&image_path.with_extension("txt"));
+        let (image, (left_pupil, right_pupil)) = load_test_image();
 
         let mut rng = create_xorshift_rng(42u64);
 
