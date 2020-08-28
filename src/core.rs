@@ -1,55 +1,26 @@
 use std::cmp::Ordering;
 
-use image::GrayImage;
-use na::{Point2, Point3, RealField};
+use image::{GrayImage, GenericImageView};
+use na::{Point2, Point3};
 use na::geometry::{Similarity2, Translation2, UnitComplex};
 
 use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
 
-pub trait Bintest<N: RealField> {
-    fn bintest(&self, image: &GrayImage, transform: &Similarity2<N>) -> bool;
-}
-
-#[derive(new)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 // #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Leaf {
-    x: i8,
-    y: i8,
+pub struct ComparisonNode {
+    left: Point2<i8>,
+    right: Point2<i8>,
 }
-
-impl Leaf {
-    pub const SCALE: f32 = u8::MAX as f32;
-
-    pub fn point(&self) -> Point2<f32> {
-        Point2::new(self.x as f32, self.y as f32)
-    }
-
-    pub fn apply_transform(&self, transform: &Similarity2<f32>) -> Point2<f32> {
-        transform.transform_point(&self.point())
-    }
-
-    pub fn find_lum_value(&self, image: &GrayImage, transform: &Similarity2<f32>) -> u8 {
-        get_safe_luminance(image, &self.apply_transform(&transform))
-    }
-}
-
-#[cfg(test)]
-impl PartialEq for Leaf {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y
-    }
-}
-
-#[derive(Debug)]
-// #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct ComparisonNode(Leaf, Leaf);
 
 impl ComparisonNode {
     pub fn new(data: [i8; 4]) -> Self {
         let [y0, x0, y1, x1] = data;
-        Self(Leaf::new(x0, y0), Leaf::new(x1, y1))
+        Self {
+            left: Point2::new(x0, y0),
+            right: Point2::new(x1, y1)
+        }
     }
 
     pub fn from_buffer(buf: &[u8; 4]) -> Self {
@@ -59,19 +30,28 @@ impl ComparisonNode {
         }
         Self::new(data)
     }
-}
 
-#[cfg(test)]
-impl PartialEq for ComparisonNode {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0 && self.1 == other.1
+    #[inline]
+    fn integer_transform(transform: &Similarity2<f32>, point: &Point2<i8>) -> Point2<u32> {
+        let x = transform.isometry.translation.x.round() as i32;
+        let y = transform.isometry.translation.y.round() as i32;
+        let size = transform.scaling() as i32;
+
+        let x = (((x * 256) + (point.x as i32) * size) / 256) as u32;
+        let y = (((y * 256) + (point.y as i32) * size) / 256) as u32;
+        Point2::new(x, y)
     }
-}
 
-impl Bintest<f32> for ComparisonNode {
-    fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
-        let lum0 = self.0.find_lum_value(image, transform);
-        let lum1 = self.1.find_lum_value(image, transform);
+    #[inline]
+    fn find_lum(image: &GrayImage, transform: &Similarity2<f32>, point: &Point2<i8>) -> u8 {
+        let point = Self::integer_transform(transform, point);
+        image.safe_get_lum(point.x, point.y)
+    }
+
+    #[inline]
+    pub fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
+        let lum0 = Self::find_lum(image, transform, &self.left);
+        let lum1 = Self::find_lum(image, transform, &self.right);
         lum0 > lum1
     }
 }
@@ -80,10 +60,11 @@ pub fn create_leaf_transform(point: &Point3<f32>) -> Similarity2<f32> {
     Similarity2::from_parts(
         Translation2::new(point.x, point.y),
         UnitComplex::identity(),
-        point.z / Leaf::SCALE,
+        point.z,
     )
 }
 
+#[inline]
 fn saturate_bound(value: u32, bound: u32) -> u32 {
     match value.cmp(&bound) {
         Ordering::Less => value,
@@ -91,10 +72,16 @@ fn saturate_bound(value: u32, bound: u32) -> u32 {
     }
 }
 
-fn get_safe_luminance(image: &GrayImage, point: &Point2<f32>) -> u8 {
-    let x = saturate_bound(point.x.round() as u32, image.width());
-    let y = saturate_bound(point.y.round() as u32, image.height());
-    image.get_pixel(x, y).0[0]
+trait SaturatedGet: GenericImageView {
+    fn safe_get_lum(&self, x: u32, y: u32) -> u8;
+}
+
+impl SaturatedGet for GrayImage {
+    fn safe_get_lum(&self, x: u32, y: u32) -> u8 {
+        let x = saturate_bound(x, self.width());
+        let y = saturate_bound(y, self.height());
+        unsafe { self.unsafe_get_pixel(x, y) }.0[0]
+    }
 }
 
 pub fn create_xorshift_rng(seed: u64) -> XorShiftRng {
@@ -105,21 +92,6 @@ pub fn create_xorshift_rng(seed: u64) -> XorShiftRng {
 mod tests {
     use super::*;
     use crate::test_utils::create_test_image;
-
-    #[test]
-    fn apply_leaf_transformation() {
-        let leaf = Leaf::new(-42, 34);
-        let roi = Point3::new(100f32, 100f32, 50f32);
-
-        let test_x = leaf.point().x * roi.z + roi.x;
-        let test_y = leaf.point().y * roi.z + roi.y;
-
-        let transform = create_leaf_transform(&roi);
-        let point = leaf.apply_transform(&transform);
-
-        abs_diff_eq!(point.x, test_x);
-        abs_diff_eq!(point.y, test_y);
-    }
 
     #[test]
     fn get_luminance_in_and_out_of_image_bounds() {
@@ -133,7 +105,7 @@ mod tests {
         ];
 
         for (point, test_lum) in tests {
-            let lum = get_safe_luminance(&image, &point);
+            let lum = image.safe_get_lum(point.x as u32, point.y as u32);
             assert_eq!(lum, test_lum);
         }
     }

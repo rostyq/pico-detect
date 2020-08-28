@@ -2,7 +2,7 @@ use na::{Point3, Similarity2};
 
 use image::GrayImage;
 
-use crate::core::{create_leaf_transform, Bintest, ComparisonNode};
+use crate::core::{create_leaf_transform, ComparisonNode};
 use std::cmp;
 use std::io::{Error, ErrorKind, Read};
 
