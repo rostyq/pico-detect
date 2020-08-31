@@ -206,7 +206,7 @@ impl Localizer {
 
 fn odd_median_mut(numbers: &mut Vec<f32>) -> f32 {
     numbers.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    numbers[numbers.len() >> 1]
+    numbers[numbers.len() / 2]
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use criterion::{BenchmarkId, criterion_group, criterion_main, Criterion};
 use std::fs::File;
 use std::io::Read;
 
-use pico_detect::{Detector, Localizer, create_xorshift_rng};
+use pico_detect::{Detector, Localizer, CascadeParameters, create_xorshift_rng};
 use pico_detect::test_utils::*;
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -39,6 +39,15 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Detector::from_readable", |b| {
         b.iter(|| Detector::from_readable(data.as_slice()).unwrap())
     });
+
+    let facefinder = load_facefinder_model();
+
+    let params = CascadeParameters::new(100, 500, 0.1, 1.1);
+    c.bench_function("Detector::run_cascade", |b| {
+        b.iter(|| facefinder.run_cascade(&image, &params));
+    });
+    // let detections = facefinder.find_clusters(&image, &params, 0.1);
+
 }
 
 criterion_group!(benches, criterion_benchmark);
