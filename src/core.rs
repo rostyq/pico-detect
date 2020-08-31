@@ -120,6 +120,7 @@ trait SaturatedGet: GenericImageView {
 }
 
 impl SaturatedGet for GrayImage {
+    #[inline]
     fn safe_get_lum(&self, x: u32, y: u32) -> u8 {
         let x = saturate_bound(x, self.width());
         let y = saturate_bound(y, self.height());

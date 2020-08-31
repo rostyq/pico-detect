@@ -1,6 +1,6 @@
 [package]
 name = "pico-detect"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Rostyslav Bohomaz <rostyslav.db@gmail.com>"]
 edition = "2018"
 keywords = ["pico", "detection"]
@@ -9,7 +9,11 @@ license = "MIT"
 description = "Pixel Intensity Comparison-based Object (PICO) detection library."
 repository = "https://github.com/rostyslavb/pico-detect"
 readme = "README.md"
-exclude = ["assets", "models"]
+exclude = ["assets", "models", "examples"]
+
+[lib]
+bench = false
+name = "pico_detect"
 
 [dependencies]
 derive-new = "0.5"
@@ -30,5 +34,5 @@ features = ["precommit-hook", "run-cargo-clippy"]
 name = "benchmarks"
 harness = false
 
-[lib]
-bench = false
+[profile.release]
+debug = true
