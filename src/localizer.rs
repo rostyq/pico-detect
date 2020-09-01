@@ -15,54 +15,6 @@ type Stages = Vec<Stage>;
 /// Implements object localization using decision trees.
 ///
 /// Details available [here](https://tehnokv.com/posts/puploc-with-trees/).
-///
-/// ### Example
-/// ```rust
-/// use std::fs::File;
-/// use image::{DynamicImage, Rgba};
-/// use nalgebra::Point3;
-/// use pico_detect::{Localizer, create_xorshift_rng};
-///
-/// // load pupil localizer
-/// let fp = File::open("./models/puploc.bin").unwrap();
-/// let puploc = Localizer::from_readable(fp).unwrap();
-///
-/// // load image
-/// let gray = match image::open("./assets/Lenna_grayscale_test.jpg").unwrap() {
-///      DynamicImage::ImageLuma8(image) => image,
-///      _ => panic!("image loading failed"),
-/// };
-///
-/// // initial parameters
-/// let mut rng = create_xorshift_rng(42u64);
-/// let init_point = Point3::new(270f32, 270f32, 40f32);
-/// let nperturbs = 31usize;
-///
-/// // find pupil center
-/// let pupil_point = puploc.perturb_localize(
-///   &gray,
-///   &init_point,
-///   &mut rng,
-///   nperturbs
-/// );
-///
-/// // draw red cross on the image
-/// let mut palette = Vec::with_capacity(255);
-/// for i in 0..255 {
-///     palette.push((i, i, i))
-/// }
-/// let mut image = gray.expand_palette(&palette, None);
-/// let x = pupil_point.x.round() as i32;
-/// let y = pupil_point.y.round() as i32;
-/// for i in -1..2 {
-///     for j in -1..2 {
-///         if i == 0 || j == 0 {
-///             image.put_pixel((x + i) as u32, (y + j) as u32, Rgba([255, 0, 0, 0]));
-///         }
-///     }
-/// }
-/// image.save("./result.jpg");
-/// ```
 pub struct Localizer {
     depth: usize,
     dsize: usize,
