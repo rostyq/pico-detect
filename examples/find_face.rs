@@ -33,16 +33,19 @@ fn main() {
 
     // parameters for face detection
     let params = CascadeParameters::new(
-        (gray.width() / 10) as usize,
-        (gray.width() / 2) as usize,
-        0.05,
+        100 as usize,
+        gray.width() as usize,
+        0.1,
         1.1,
     );
 
-    let detections = facefinder.find_clusters(&gray, &params, 0.05);
+    let detections = facefinder.find_clusters(&gray, &params, 0.2);
 
     println!("Faces detected: {}.", detections.len());
     for (i, detection) in detections.iter().enumerate() {
+        if detection.score < 5.0 {
+            continue;
+        }
         println!(
             "{} :: point: {}; score: {}",
             i, &detection.point, detection.score
