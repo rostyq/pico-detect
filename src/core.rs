@@ -1,21 +1,15 @@
 use std::cmp::Ordering;
 
 use image::{GenericImageView, GrayImage};
-use na::geometry::{Similarity2, Translation2, UnitComplex};
-use na::{Point2, Point3};
+use na::{Point2, Vector3};
 
 use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
 
 #[derive(Debug, PartialEq)]
-// #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ComparisonNode {
-    left: Point2<i8>,
-    right: Point2<i8>,
-}
-
-pub trait Bintest<T> {
-    fn bintest(&self, image: &GrayImage, transform: &T) -> bool;
+    pub left: Point2<i8>,
+    pub right: Point2<i8>,
 }
 
 impl ComparisonNode {
@@ -37,93 +31,38 @@ impl ComparisonNode {
 
 }
 
-#[inline]
-fn find_lum_by_similarity(
-    image: &GrayImage,
-    transform: &Similarity2<f32>,
-    point: &Point2<i8>,
-) -> u8 {
-    let point = transform_by_similarity(transform, point);
-    image.safe_get_lum(point.x, point.y)
+pub trait Bintest<T> {
+    fn find_point(transform: &T, point: &Point2<i8>) -> Point2<u32>;
+
+    fn find_lum(image: &GrayImage, transform: &T, point: &Point2<i8>) -> u8;
+
+    fn bintest(&self, image: &GrayImage, transform: &T) -> bool;
 }
 
 #[inline]
-fn transform_by_similarity(transform: &Similarity2<f32>, point: &Point2<i8>) -> Point2<u32> {
-    let x = transform.isometry.translation.x.round() as i32;
-    let y = transform.isometry.translation.y.round() as i32;
-    let size = transform.scaling() as i32;
-
-    transform_fast(point, x, y, size)
-}
-
-impl Bintest<Similarity2<f32>> for ComparisonNode {
-    #[inline]
-    fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
-        let lum0 = find_lum_by_similarity(image, transform, &self.left);
-        let lum1 = find_lum_by_similarity(image, transform, &self.right);
-        lum0 > lum1
-    }
-}
-
-#[inline]
-fn find_lum_by_usize(
-    image: &GrayImage,
-    transform: &Point3<usize>,
-    point: &Point2<i8>,
-) -> u8 {
-    let point = transform_by_usize(transform, point);
-    image.safe_get_lum(point.x, point.y)
-}
-
-#[inline]
-fn transform_by_usize(transform: &Point3<usize>, point: &Point2<i8>) -> Point2<u32> {
-    let x = transform.x as i32;
-    let y = transform.y as i32;
-    let size = transform.z as i32;
-    transform_fast(point, x, y, size)
-}
-
-#[inline]
-fn transform_fast(point: &Point2<i8>, x: i32, y: i32, size: i32) -> Point2<u32> {
-    let x = (((x * 256) + (point.x as i32) * size) / 256) as u32;
-    let y = (((y * 256) + (point.y as i32) * size) / 256) as u32;
+pub fn scale_and_translate_fast(point: &Point2<i8>, transform: &Vector3<i32>) -> Point2<u32> {
+    let x = (((transform.x * 256) + (point.x as i32) * transform.z) / 256) as u32;
+    let y = (((transform.y * 256) + (point.y as i32) * transform.z) / 256) as u32;
     Point2::new(x, y)
 }
 
-impl Bintest<Point3<usize>> for ComparisonNode {
+pub trait SaturatedGet: GenericImageView {
     #[inline]
-    fn bintest(&self, image: &GrayImage, transform: &Point3<usize>) -> bool {
-        let lum0 = find_lum_by_usize(image, transform, &self.left);
-        let lum1 = find_lum_by_usize(image, transform, &self.right);
-        lum0 > lum1
+    fn saturate_bound(value: u32, bound: u32) -> u32 {
+        match value.cmp(&bound) {
+            Ordering::Less => value,
+            _ => bound - 1,
+        }
     }
-}
 
-pub fn create_leaf_transform(point: &Point3<f32>) -> Similarity2<f32> {
-    Similarity2::from_parts(
-        Translation2::new(point.x, point.y),
-        UnitComplex::identity(),
-        point.z,
-    )
-}
-
-#[inline]
-fn saturate_bound(value: u32, bound: u32) -> u32 {
-    match value.cmp(&bound) {
-        Ordering::Less => value,
-        _ => bound - 1,
-    }
-}
-
-trait SaturatedGet: GenericImageView {
     fn safe_get_lum(&self, x: u32, y: u32) -> u8;
 }
 
 impl SaturatedGet for GrayImage {
     #[inline]
     fn safe_get_lum(&self, x: u32, y: u32) -> u8 {
-        let x = saturate_bound(x, self.width());
-        let y = saturate_bound(y, self.height());
+        let x = Self::saturate_bound(x, self.width());
+        let y = Self::saturate_bound(y, self.height());
         unsafe { self.unsafe_get_pixel(x, y) }.0[0]
     }
 }
@@ -152,17 +91,5 @@ mod tests {
             let lum = image.safe_get_lum(point.x as u32, point.y as u32);
             assert_eq!(lum, test_lum);
         }
-    }
-
-    #[test]
-    fn bintest_image_edges() {
-        let (width, height) = (255, 255);
-        let image = create_test_image(width, height);
-        let node = ComparisonNode::new([i8::MAX, i8::MAX, i8::MIN, i8::MIN]);
-
-        let point = Point3::new((width as f32) / 2.0, (height as f32) / 2.0, width as f32);
-        let transform = create_leaf_transform(&point);
-        let result = node.bintest(&image, &transform);
-        assert!(result);
     }
 }

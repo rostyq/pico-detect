@@ -1,11 +1,36 @@
 use na::Scalar;
-use na::{Point2, Point3};
+use na::{Point2, Point3, Vector3};
 
 use image::GrayImage;
 
-use crate::core::{Bintest, ComparisonNode};
+use crate::core::{scale_and_translate_fast, Bintest, ComparisonNode, SaturatedGet};
 use std::cmp::{max, min, PartialOrd};
 use std::io::{Error, ErrorKind, Read};
+
+use std::fmt;
+
+impl Bintest<Point3<usize>> for ComparisonNode {
+    #[inline]
+    fn find_point(transform: &Point3<usize>, point: &Point2<i8>) -> Point2<u32> {
+        scale_and_translate_fast(
+            point,
+            &Vector3::new(transform.x as i32, transform.y as i32, transform.z as i32),
+        )
+    }
+
+    #[inline]
+    fn find_lum(image: &GrayImage, transform: &Point3<usize>, point: &Point2<i8>) -> u8 {
+        let point = Self::find_point(transform, point);
+        image.safe_get_lum(point.x, point.y)
+    }
+
+    #[inline]
+    fn bintest(&self, image: &GrayImage, transform: &Point3<usize>) -> bool {
+        let lum0 = Self::find_lum(image, transform, &self.left);
+        let lum1 = Self::find_lum(image, transform, &self.right);
+        lum0 <= lum1
+    }
+}
 
 struct Tree {
     nodes: Vec<ComparisonNode>,
@@ -31,6 +56,12 @@ pub struct CascadeParameters {
 pub struct Detection<T: Scalar> {
     pub point: Point3<T>,
     pub score: f32,
+}
+
+impl fmt::Display for Detection<usize> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{ point: {}, score: {}}}", self.point, self.score)
+    }
 }
 
 impl Detection<f32> {
@@ -63,13 +94,12 @@ impl From<Detection<usize>> for Detection<f32> {
 
 impl Detector {
     #[inline]
-    fn classify_region(&self, image: &GrayImage, transform: &Point3<usize>) -> Option<f32> {
+    fn classify_region(&self, image: &GrayImage, roi: &Point3<usize>) -> Option<f32> {
         let mut result = 0.0f32;
 
         for tree in self.trees.iter() {
             let idx = (0..self.depth).fold(1, |idx, _| {
-                2 * idx
-                    + unsafe { tree.nodes.get_unchecked(idx) }.bintest(image, transform) as usize
+                2 * idx + unsafe { tree.nodes.get_unchecked(idx) }.bintest(image, roi) as usize
             });
             let lutidx = idx.saturating_sub(self.dsize);
             result += tree.predictions[lutidx];
@@ -103,7 +133,7 @@ impl Detector {
                     }
                 }
             }
-            size = ((size as f32) * params.scale_factor) as usize;
+            size = ((size as f32) * params.scale_factor).round() as usize;
         }
     }
 
@@ -138,24 +168,18 @@ impl Detector {
         let mut assignments = vec![false; detections.len()];
         let mut clusters: Vec<Detection<f32>> = Vec::with_capacity(detections.len());
 
-        for i in 0..detections.len() {
+        for (i, det1) in detections.iter().enumerate() {
             if assignments[i] {
                 continue;
             }
 
-            let mut x = 0usize;
-            let mut y = 0usize;
-            let mut size = 0usize;
-            let mut score = 0f32;
-            let mut count = 0usize;
-            for j in (i + 1)..detections.len() {
-                let (d_i, d_j) = (&detections[i], &detections[j]);
-                if calculate_iou(&d_i.point, &d_j.point) > threshold {
+            let mut sum = Vector3::<usize>::zeros();
+            let (mut score, mut count) = (0f32, 0usize);
+            for det2 in detections[(i+1)..].iter() {
+                if calculate_iou(&det1.point, &det2.point) > threshold {
                     assignments[i] = true;
-                    x += d_i.point.x;
-                    y += d_i.point.y;
-                    size += d_i.point.z;
-                    score += d_i.score;
+                    sum += det1.point.coords;
+                    score += det1.score;
                     count += 1;
                 }
             }
@@ -163,9 +187,9 @@ impl Detector {
             if count > 0 {
                 let n = count as f32;
                 clusters.push(Detection::<f32>::new(
-                    (x as f32) / n,
-                    (y as f32) / n,
-                    (size as f32) / n,
+                    (sum.x as f32) / n,
+                    (sum.y as f32) / n,
+                    (sum.z as f32) / n,
                     score,
                 ));
             }
@@ -239,10 +263,7 @@ fn roi_to_bbox(p: &Point3<usize>) -> (Point2<usize>, Point2<usize>) {
 #[allow(dead_code)]
 fn roi_to_bbox_f(p: &Point3<f32>) -> (Point2<f32>, Point2<f32>) {
     let h = p.z / 2.0;
-    (
-        Point2::new(p.x - h, p.y - h),
-        Point2::new(p.x + h, p.y + h),
-    )
+    (Point2::new(p.x - h, p.y - h), Point2::new(p.x + h, p.y + h))
 }
 
 /// Intersection over Union (IoU)

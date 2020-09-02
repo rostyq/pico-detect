@@ -1,8 +1,9 @@
 use std::io::{Error, ErrorKind, Read};
 
-use super::core::{create_leaf_transform, ComparisonNode, Bintest};
+use super::core::{scale_and_translate_fast, Bintest, ComparisonNode, SaturatedGet};
 use image::GrayImage;
-use na::{Point2, Point3, Translation2, Vector2};
+use na::geometry::{Similarity2, Translation2, UnitComplex};
+use na::{Point2, Point3, Vector2, Vector3};
 
 use rand::distributions::Uniform;
 use rand::{Rng, RngCore};
@@ -11,6 +12,42 @@ type Tree = Vec<ComparisonNode>;
 type Predictions = Vec<Vector2<f32>>;
 type Stage = Vec<(Tree, Predictions)>;
 type Stages = Vec<Stage>;
+
+impl Bintest<Similarity2<f32>> for ComparisonNode {
+    #[inline]
+    fn find_point(transform: &Similarity2<f32>, point: &Point2<i8>) -> Point2<u32> {
+        scale_and_translate_fast(
+            point,
+            &Vector3::new(
+                transform.isometry.translation.x.round() as i32,
+                transform.isometry.translation.y.round() as i32,
+                transform.scaling() as i32
+            ),
+        )
+    }
+
+    #[inline]
+    fn find_lum(image: &GrayImage, transform: &Similarity2<f32>, point: &Point2<i8>) -> u8 {
+        let point = Self::find_point(transform, point);
+        image.safe_get_lum(point.x, point.y)
+    }
+
+    #[inline]
+    fn bintest(&self, image: &GrayImage, transform: &Similarity2<f32>) -> bool {
+        let lum0 = Self::find_lum(image, transform, &self.left);
+        let lum1 = Self::find_lum(image, transform, &self.right);
+        lum0 > lum1
+    }
+}
+
+#[inline]
+fn create_leaf_transform(point: &Point3<f32>) -> Similarity2<f32> {
+    Similarity2::from_parts(
+        Translation2::new(point.x, point.y),
+        UnitComplex::identity(),
+        point.z,
+    )
+}
 
 /// Implements object localization using decision trees.
 ///
@@ -41,7 +78,9 @@ impl Localizer {
 
             for (codes, preds) in stage.iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    2 * idx + 1 + unsafe { codes.get_unchecked(idx) }.bintest(image, &transform) as usize
+                    2 * idx
+                        + 1
+                        + unsafe { codes.get_unchecked(idx) }.bintest(image, &transform) as usize
                 });
                 let lutidx = idx.saturating_sub(self.dsize) + 1;
 
@@ -229,5 +268,17 @@ mod tests {
             nperturbs,
         );
         assert_abs_diff_eq!(right_pupil, pred, epsilon = epsilon);
+    }
+
+    #[test]
+    fn bintest_image_edges() {
+        let (width, height) = (255, 255);
+        let image = create_test_image(width, height);
+        let node = ComparisonNode::new([i8::MAX, i8::MAX, i8::MIN, i8::MIN]);
+
+        let point = Point3::new((width as f32) / 2.0, (height as f32) / 2.0, width as f32);
+        let transform = create_leaf_transform(&point);
+        let result = node.bintest(&image, &transform);
+        assert!(result);
     }
 }
