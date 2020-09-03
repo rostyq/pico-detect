@@ -33,9 +33,9 @@ fn main() {
 
     // parameters for face detection
     let params = CascadeParameters::new(
-        100 as usize,
-        gray.width() as usize,
-        0.1,
+        100,
+        gray.width(),
+        0.05,
         1.1,
     );
 
@@ -43,17 +43,18 @@ fn main() {
 
     println!("Faces detected: {}.", detections.len());
     for (i, detection) in detections.iter().enumerate() {
-        if detection.score < 5.0 {
+        if detection.score < 40.0 {
             continue;
         }
         println!(
             "{} :: point: {}; score: {}",
             i, &detection.point, detection.score
         );
+
         let center = &detection.point;
         let size = detection.point.z;
-        let right_pupil = Point3::new(center.x - size * 0.1, center.y - size * 0.2, size * 0.33);
-        let left_pupil = Point3::new(center.x + size * 0.1, center.y - size * 0.2, size * 0.33);
+        let right_pupil = Point3::new(center.x - size * 0.15, center.y - size * 0.15, size * 0.4);
+        let left_pupil = Point3::new(center.x + size * 0.15, center.y - size * 0.15, size * 0.4);
 
         // find pupils
         let right_pupil = puploc.perturb_localize(&gray, &right_pupil, &mut rng, nperturbs);

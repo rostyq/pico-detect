@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-use image::{DynamicImage, GrayImage};
+use image::GrayImage;
 use na::{Point2, Point3};
 
 use super::localizer::Localizer;
@@ -27,15 +27,12 @@ pub fn load_facefinder_model() -> Detector {
 }
 
 pub fn load_image(path: &Path) -> GrayImage {
-    match image::open(path).unwrap() {
-        DynamicImage::ImageLuma8(image) => image,
-        _ => panic!("invalid test image"),
-    }
+    image::open(path).unwrap().to_luma()
 }
 
-pub fn load_test_image() -> (GrayImage, (Point2<f32>, Point2<f32>)){
+pub fn load_test_image() -> (GrayImage, (Point3<u32>, Point2<f32>, Point2<f32>)){
     let assets_dir = Path::new("./assets/");
-    let image_path = assets_dir.join("Lenna_grayscale_test.jpg");
+    let image_path = assets_dir.join("Lenna_(test_image).png");
     let image = load_image(&image_path);
     let data = load_data(&image_path.with_extension("txt"));
     (image, data)
@@ -49,7 +46,7 @@ pub fn create_init_point(point: &Point2<f32>) -> Point3<f32> {
     init_point
 }
 
-pub fn load_data(path: &Path) -> (Point2<f32>, Point2<f32>) {
+pub fn load_data(path: &Path) -> (Point3<u32>, Point2<f32>, Point2<f32>) {
     let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
 
@@ -57,12 +54,26 @@ pub fn load_data(path: &Path) -> (Point2<f32>, Point2<f32>) {
     reader.read_line(&mut buf).expect("no first line");
     buf.clear();
 
-    reader.read_line(&mut buf).expect("no data");
+    reader.read_line(&mut buf).expect("no face data");
+    let data = buf
+        .trim()
+        .split("\t")
+        .filter_map(|s| s.parse::<u32>().ok())
+        .collect::<Vec<_>>();
+    let face = Point3::new(data[0], data[1], data[2]);
+
+    reader.read_line(&mut buf).expect("no first line");
+    buf.clear();
+
+    reader.read_line(&mut buf).expect("no eyes data");
     let data = buf
         .trim()
         .split("\t")
         .filter_map(|s| s.parse::<f32>().ok())
         .collect::<Vec<_>>();
 
-    (Point2::new(data[0], data[1]), Point2::new(data[2], data[3]))
+    let left_pupil = Point2::new(data[0], data[1]);
+    let right_pupil = Point2::new(data[2], data[3]);
+
+    (face, left_pupil, right_pupil)
 }

@@ -238,7 +238,7 @@ mod tests {
     #[test]
     fn check_pupil_localization() {
         let puploc = load_puploc_model();
-        let (image, (left_pupil, right_pupil)) = load_test_image();
+        let (image, (_, left_pupil, right_pupil)) = load_test_image();
 
         let epsilon = 3f32;
         let pred = puploc.localize(&image, &create_init_point(&left_pupil));
@@ -251,7 +251,7 @@ mod tests {
     #[test]
     fn check_perturbated_pupil_localization() {
         let puploc = load_puploc_model();
-        let (image, (left_pupil, right_pupil)) = load_test_image();
+        let (image, (_, left_pupil, right_pupil)) = load_test_image();
 
         let mut rng = create_xorshift_rng(42u64);
 
