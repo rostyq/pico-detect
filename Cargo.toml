@@ -9,7 +9,7 @@ license = "MIT"
 description = "Pixel Intensity Comparison-based Object (PICO) detection library."
 repository = "https://github.com/rostyslavb/pico-detect"
 readme = "README.md"
-exclude = ["assets", "models", "examples"]
+exclude = ["assets", "models", "examples", "benches"]
 
 [lib]
 bench = false
