@@ -15,7 +15,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     let puploc = load_puploc_model();
-    let (image, (left_pupil, _)) = load_test_image();
+    let (image, (_, left_pupil, _)) = load_test_image();
     let init_point = create_init_point(&left_pupil);
 
     c.bench_function("Localizer.localize", |b| {
@@ -46,7 +46,10 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("Detector::run_cascade", |b| {
         b.iter(|| facefinder.run_cascade(&image, &params));
     });
-    // let detections = facefinder.find_clusters(&image, &params, 0.1);
+
+    c.bench_function("Detector::find_clusters", |b| {
+        b.iter(|| facefinder.find_clusters(&image, &params, 0.2));
+    });
 
 }
 

@@ -1,17 +1,16 @@
-use na::Scalar;
-use na::{Point2, Point3, Vector3};
+use std::io::{Error, ErrorKind, Read};
+use std::ops::AddAssign;
+use std::fmt;
+use std::cmp;
 
+use na::{Point2, Point3, Vector3};
 use image::GrayImage;
 
 use crate::core::{scale_and_translate_fast, Bintest, ComparisonNode, SaturatedGet};
-use std::cmp::{max, min, PartialOrd};
-use std::io::{Error, ErrorKind, Read};
 
-use std::fmt;
-
-impl Bintest<Point3<usize>> for ComparisonNode {
+impl Bintest<Point3<u32>> for ComparisonNode {
     #[inline]
-    fn find_point(transform: &Point3<usize>, point: &Point2<i8>) -> Point2<u32> {
+    fn find_point(transform: &Point3<u32>, point: &Point2<i8>) -> Point2<u32> {
         scale_and_translate_fast(
             point,
             &Vector3::new(transform.x as i32, transform.y as i32, transform.z as i32),
@@ -19,13 +18,13 @@ impl Bintest<Point3<usize>> for ComparisonNode {
     }
 
     #[inline]
-    fn find_lum(image: &GrayImage, transform: &Point3<usize>, point: &Point2<i8>) -> u8 {
+    fn find_lum(image: &GrayImage, transform: &Point3<u32>, point: &Point2<i8>) -> u8 {
         let point = Self::find_point(transform, point);
         image.safe_get_lum(point.x, point.y)
     }
 
     #[inline]
-    fn bintest(&self, image: &GrayImage, transform: &Point3<usize>) -> bool {
+    fn bintest(&self, image: &GrayImage, transform: &Point3<u32>) -> bool {
         let lum0 = Self::find_lum(image, transform, &self.left);
         let lum1 = Self::find_lum(image, transform, &self.right);
         lum0 <= lum1
@@ -38,63 +37,80 @@ struct Tree {
     threshold: f32,
 }
 
+/// Implements object detection using cascade of decision tree classifiers.
+///
+/// Details available [here](https://tehnokv.com/posts/picojs-intro/).
+///
+/// Original implementation [here](https://github.com/nenadmarkus/pico).
 pub struct Detector {
     depth: usize,
     dsize: usize,
     trees: Vec<Tree>,
 }
 
+/// Cascade parameters for `Detector`.
 #[derive(new, Debug)]
 pub struct CascadeParameters {
-    pub min_size: usize,
-    pub max_size: usize,
+    /// minimum size of an object
+    pub min_size: u32,
+    /// maximum size of an object
+    pub max_size: u32,
+    /// how far to move the detection window by percent of its size
     pub shift_factor: f32,
+    /// for multiscale processing: resize the detection window by percent
+    /// of its size when moving to the higher scale
     pub scale_factor: f32,
 }
 
-#[derive(Debug)]
-pub struct Detection<T: Scalar> {
-    pub point: Point3<T>,
+/// Object detection data.
+#[derive(Debug, Copy, Clone)]
+pub struct Detection {
+    /// Region of interest where
+    /// `x` and `y` center coordinates,
+    /// and `z` size of a region.
+    pub point: Point3<f32>,
+    /// Detection score.
     pub score: f32,
 }
 
-impl fmt::Display for Detection<usize> {
+impl fmt::Display for Detection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{{ point: {}, score: {}}}", self.point, self.score)
     }
 }
 
-impl Detection<f32> {
+impl Detection {
     fn new(x: f32, y: f32, size: f32, score: f32) -> Self {
         Self {
             point: Point3::new(x, y, size),
             score,
         }
     }
-}
 
-impl Detection<usize> {
-    #[inline]
-    fn new(point: Point3<usize>, score: f32) -> Self {
-        Self { point, score }
+    fn scale_mut(&mut self, value: f32) {
+        self.point.coords.scale_mut(value);
     }
 }
 
-impl From<Detection<usize>> for Detection<f32> {
-    #[inline]
-    fn from(d: Detection<usize>) -> Self {
-        Detection::<f32>::new(
-            d.point.x as f32,
-            d.point.y as f32,
-            d.point.z as f32,
-            d.score,
-        )
+impl AddAssign for Detection {
+    fn add_assign(&mut self, rhs: Self) {
+        self.point += rhs.point.coords;
+        self.score += rhs.score;
     }
 }
 
 impl Detector {
+    /// Estimate detection score for the region of interest.
+    ///
+    /// ### Arguments
+    ///
+    /// * `image` - Target image.
+    /// * `roi` - region of interest:
+    ///   - `roi.x` position on image x-axis,
+    ///   - `roi.y` position on image y-axis,
+    ///   - `roi.z` region size.
     #[inline]
-    fn classify_region(&self, image: &GrayImage, roi: &Point3<usize>) -> Option<f32> {
+    pub fn classify_region(&self, image: &GrayImage, roi: &Point3<u32>) -> Option<f32> {
         let mut result = 0.0f32;
 
         for tree in self.trees.iter() {
@@ -112,91 +128,93 @@ impl Detector {
     }
 
     #[inline]
+    /// Run cascade and push detections to existing collection. 
     pub fn run_cascade_mut(
         &self,
         image: &GrayImage,
-        detections: &mut Vec<Detection<usize>>,
+        detections: &mut Vec<Detection>,
         params: &CascadeParameters,
     ) {
-        let (width, height) = (image.width() as usize, image.height() as usize);
+        let (width, height) = (image.width(), image.height());
         let mut size = params.min_size;
 
         while size <= params.max_size {
-            let step = max((params.shift_factor * (size as f32)) as usize, 1);
+            let sizef = size as f32;
+            let step = cmp::max((sizef * params.shift_factor) as usize, 1);
             let offset = size / 2 + 1;
 
             for y in (offset..(height - offset)).step_by(step) {
                 for x in (offset..(width - offset)).step_by(step) {
-                    let point = Point3::new(x, y, size);
-                    if let Some(score) = self.classify_region(&image, &point) {
-                        detections.push(Detection::<usize>::new(point, score));
+                    if let Some(score) = self.classify_region(&image, &Point3::new(x, y, size)) {
+                        detections.push(Detection::new(x as f32, y as f32, size as f32, score));
                     }
                 }
             }
-            size = ((size as f32) * params.scale_factor).round() as usize;
+            size = (sizef * params.scale_factor) as u32;
         }
     }
 
     #[inline]
+    /// Run cascade with a new empty detection collection.
     pub fn run_cascade(
         &self,
         image: &GrayImage,
         params: &CascadeParameters,
-    ) -> Vec<Detection<usize>> {
+    ) -> Vec<Detection> {
         let mut detections = Vec::new();
         self.run_cascade_mut(image, &mut detections, params);
         detections
     }
 
+    /// Run cascade and clusterize resulted detections using
+    /// `Self::cluster_detections`
     #[inline]
     pub fn find_clusters(
         &self,
         image: &GrayImage,
         params: &CascadeParameters,
         threshold: f32,
-    ) -> Vec<Detection<f32>> {
+    ) -> Vec<Detection> {
         let detections = self.run_cascade(image, params);
         Self::cluster_detections(detections, threshold)
     }
 
+    /// Clusterize detections by intersection over union (IoU) metric.
+    ///
+    /// ### Arguments
+    /// `detections` -- mutable collection of detections;
+    /// `threshold` -- if IoU is bigger then a detection is a part of a cluster.
     #[inline]
     pub fn cluster_detections(
-        mut detections: Vec<Detection<usize>>,
+        mut detections: Vec<Detection>,
         threshold: f32,
-    ) -> Vec<Detection<f32>> {
-        detections.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+    ) -> Vec<Detection> {
+        detections.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
         let mut assignments = vec![false; detections.len()];
-        let mut clusters: Vec<Detection<f32>> = Vec::with_capacity(detections.len());
+        let mut clusters: Vec<Detection> = Vec::with_capacity(detections.len());
 
         for (i, det1) in detections.iter().enumerate() {
             if assignments[i] {
                 continue;
+            } else {
+                assignments[i] = true;
             }
 
-            let mut sum = Vector3::<usize>::zeros();
-            let (mut score, mut count) = (0f32, 0usize);
-            for det2 in detections[(i+1)..].iter() {
+            let (mut cluster, mut count) = (det1.clone(), 1usize);
+            for (det2, j) in detections[(i+1)..].iter().zip((i+1)..) {
                 if calculate_iou(&det1.point, &det2.point) > threshold {
-                    assignments[i] = true;
-                    sum += det1.point.coords;
-                    score += det1.score;
+                    assignments[j] = true;
+                    cluster += *det2;
                     count += 1;
                 }
             }
-
-            if count > 0 {
-                let n = count as f32;
-                clusters.push(Detection::<f32>::new(
-                    (sum.x as f32) / n,
-                    (sum.y as f32) / n,
-                    (sum.z as f32) / n,
-                    score,
-                ));
-            }
+            if count > 1 { cluster.scale_mut((count as f32).recip()) }
+            clusters.push(cluster);
         }
         clusters
     }
 
+    /// Create detector from a readable source.
     pub fn from_readable(mut readable: impl Read) -> Result<Self, Error> {
         let mut buffer: [u8; 4] = [0u8; 4];
         // skip first 8 bytes;
@@ -250,35 +268,38 @@ impl Detector {
 }
 
 /// (x, y, size) -> (x0, x1, y0, y1)
-#[inline]
-fn roi_to_bbox(p: &Point3<usize>) -> (Point2<usize>, Point2<usize>) {
-    let h = p.z / 2;
-    (
-        Point2::new(p.x.saturating_sub(h), p.y.saturating_sub(h)),
-        Point2::new(p.x + h, p.y + h),
-    )
-}
-
-/// (x, y, size) -> (x0, x1, y0, y1)
 #[allow(dead_code)]
-fn roi_to_bbox_f(p: &Point3<f32>) -> (Point2<f32>, Point2<f32>) {
+fn roi_to_bbox(p: &Point3<f32>) -> (Point2<f32>, Point2<f32>) {
     let h = p.z / 2.0;
     (Point2::new(p.x - h, p.y - h), Point2::new(p.x + h, p.y + h))
 }
 
 /// Intersection over Union (IoU)
 #[inline]
-fn calculate_iou(p0: &Point3<usize>, p1: &Point3<usize>) -> f32 {
+fn calculate_iou(p0: &Point3<f32>, p1: &Point3<f32>) -> f32 {
+
+    #[inline]
+    fn max(v1: f32, v2: f32) -> f32 {
+        if v1 > v2 { v1 }
+        else { v2 }
+    }
+
+    #[inline]
+    fn min(v1: f32, v2: f32) -> f32 {
+        if v1 < v2 { v1 }
+        else { v2 }
+    }
+
     let b0 = roi_to_bbox(p0);
     let b1 = roi_to_bbox(p1);
 
-    let ix = ((min(b0.1.x, b1.1.x) as i32) - (max(b0.0.x, b1.0.x) as i32)).abs() as usize;
-    let iy = ((min(b0.1.y, b1.1.y) as i32) - (max(b0.0.y, b1.0.y) as i32)).abs() as usize;
+    let ix = max(0f32, min(b0.1.x, b1.1.x) - max(b0.0.x, b1.0.x));
+    let iy = max(0f32, min(b0.1.y, b1.1.y) - max(b0.0.y, b1.0.y));
 
     let inter_square = ix * iy;
     let union_square = (p0.z * p0.z + p1.z * p1.z) - inter_square;
 
-    (inter_square as f32) / (union_square as f32)
+    inter_square / union_square
 }
 
 #[cfg(test)]
@@ -314,36 +335,96 @@ mod tests {
     }
 
     #[test]
-    fn check_face_detection() {
+    fn check_classify_region() {
+        let facefinder = load_facefinder_model();
+        let (image, (face_roi, ..)) = load_test_image();
+        println!("{}", face_roi);
+
+        let score = facefinder.classify_region(&image, &face_roi);
+
+        assert!(score.is_some());
+        assert_abs_diff_eq!(score.unwrap(), 2.4434934);
+    }
+
+    #[test]
+    fn check_find_clusters() {
         let facefinder = load_facefinder_model();
         let (image, _data) = load_test_image();
 
-        let params = CascadeParameters::new(150, 300, 0.05, 1.05);
-        let detections = facefinder.find_clusters(&image, &params, 0.1);
+        let params = CascadeParameters::new(100, image.width(), 0.05, 1.1);
+        let detections = facefinder.find_clusters(&image, &params, 0.2);
 
-        for (i, detection) in detections.iter().enumerate() {
-            let bbox = roi_to_bbox_f(&detection.point);
-            println!(
-                "{} :: bbox: {}, {}; score: {}",
-                i, bbox.0, bbox.1, detection.score
-            );
-        }
+        let detections: Vec<Detection> = detections.into_iter()
+            .filter(|d| { d.score > 40.0 })
+            .collect();
 
         assert_eq!(detections.len(), 1);
         let detection = &detections[0];
 
         assert_abs_diff_eq!(
             detection.point,
-            Point3::new(289.0, 316.0, 180.0),
-            epsilon = 2.0
+            Point3::new(290.0, 302.0, 154.0),
+            epsilon = 1.0
         );
-        assert_abs_diff_eq!(detection.score, 0.6565249);
+        assert_abs_diff_eq!(detection.score, 58.0, epsilon = 1.0);
     }
 
     #[test]
     fn check_iou() {
-        let p0 = Point3::<usize>::new(100, 100, 60);
-        let p1 = Point3::<usize>::new(125, 125, 65);
-        assert_abs_diff_eq!(calculate_iou(&p0, &p1), 0.21205081);
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 50.0),
+                &Point3::<f32>::new(200.0, 100.0, 50.0)
+            ),
+            0.0
+        );
+
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 50.0),
+                &Point3::<f32>::new(100.0, 200.0, 50.0)
+            ),
+            0.0
+        );
+
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 50.0),
+                &Point3::<f32>::new(200.0, 200.0, 50.0)
+            ),
+            0.0
+        );
+
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 50.0),
+                &Point3::<f32>::new(100.0, 100.0, 50.0)
+            ),
+            1.0
+        );
+
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 50.0),
+                &Point3::<f32>::new(125.0, 100.0, 50.0)
+            ),
+            0.3333333
+        );
+
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 50.0),
+                &Point3::<f32>::new(100.0, 125.0, 50.0)
+            ),
+            0.3333333
+        );
+
+        assert_abs_diff_eq!(
+            calculate_iou(
+                &Point3::<f32>::new(100.0, 100.0, 60.0),
+                &Point3::<f32>::new(125.0, 125.0, 65.0)
+            ),
+            0.21908471,
+        );
     }
 }
