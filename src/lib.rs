@@ -13,9 +13,11 @@ extern crate derive_new;
 mod core;
 mod localizer;
 mod detector;
+mod shaper;
 
 pub use localizer::Localizer;
 pub use detector::{Detector, CascadeParameters, Detection};
+pub use shaper::Shaper;
 pub use crate::core::create_xorshift_rng;
 
 pub mod test_utils;

@@ -7,6 +7,7 @@ use na::{Point2, Point3};
 
 use super::localizer::Localizer;
 use super::detector::Detector;
+use super::shaper::Shaper;
 
 pub fn create_test_image(width: u32, height: u32) -> GrayImage {
     use image::Luma;
@@ -14,6 +15,11 @@ pub fn create_test_image(width: u32, height: u32) -> GrayImage {
     image.put_pixel(0, 0, Luma::from([42u8]));
     image.put_pixel(width - 1, height - 1, Luma::from([255u8]));
     image
+}
+
+pub fn load_face_landmarks_model() -> Shaper {
+    let fp = File::open("./models/shaper_5.bin").unwrap();
+    Shaper::from_readable(fp).unwrap()
 }
 
 pub fn load_puploc_model() -> Localizer {
