@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
+use std::io;
 
 use image::{GenericImageView, GrayImage};
-use na::{Point2, Vector3};
+use na::Point2;
 
 use rand::SeedableRng;
 use rand_xorshift::XorShiftRng;
@@ -30,19 +31,43 @@ impl ComparisonNode {
     }
 }
 
+pub struct ThresholdNode {
+    pub idx: (usize, usize),
+    pub threshold: f32,
+}
+
+impl ThresholdNode {
+    pub fn from_readable(mut readable: impl io::Read) -> io::Result<Self> {
+        let mut buf = [0u8; 4];
+
+        readable.read_exact(&mut buf)?;
+        let idx0 = u32::from_ne_bytes(buf) as usize;
+
+        readable.read_exact(&mut buf)?;
+        let idx1 = u32::from_ne_bytes(buf) as usize;
+
+        readable.read_exact(&mut buf)?;
+        let threshold = f32::from_ne_bytes(buf);
+
+        Ok(Self {
+            idx: (idx0, idx1),
+            threshold,
+        })
+    }
+
+    #[allow(dead_code)]
+    pub fn bintest(&self, feautures: &[f32]) -> bool {
+        let diff = feautures[self.idx.0] - feautures[self.idx.1];
+        diff > self.threshold
+    }
+}
+
 pub trait Bintest<T> {
     fn find_point(transform: &T, point: &Point2<i8>) -> Point2<u32>;
 
     fn find_lum(image: &GrayImage, transform: &T, point: &Point2<i8>) -> u8;
 
     fn bintest(&self, image: &GrayImage, transform: &T) -> bool;
-}
-
-#[inline]
-pub fn scale_and_translate_fast(point: &Point2<i8>, transform: &Vector3<i32>) -> Point2<u32> {
-    let x = (((transform.x << 8) + (point.x as i32) * transform.z) >> 8) as u32;
-    let y = (((transform.y << 8) + (point.y as i32) * transform.z) >> 8) as u32;
-    Point2::new(x, y)
 }
 
 pub trait SaturatedGet: GenericImageView {
@@ -54,15 +79,30 @@ pub trait SaturatedGet: GenericImageView {
         }
     }
 
-    fn safe_get_lum(&self, x: u32, y: u32) -> u8;
+    fn saturated_get_lum(&self, x: u32, y: u32) -> u8;
 }
 
 impl SaturatedGet for GrayImage {
     #[inline]
-    fn safe_get_lum(&self, x: u32, y: u32) -> u8 {
+    fn saturated_get_lum(&self, x: u32, y: u32) -> u8 {
         let x = Self::saturate_bound(x, self.width());
         let y = Self::saturate_bound(y, self.height());
         unsafe { self.unsafe_get_pixel(x, y) }.0[0]
+    }
+}
+
+pub trait SafeGet: GenericImageView {
+    fn safe_get_lum(&self, x: u32, y: u32, fallback: u8) -> u8;
+}
+
+impl SafeGet for GrayImage {
+    #[inline]
+    fn safe_get_lum(&self, x: u32, y: u32, fallback: u8) -> u8 {
+        if self.in_bounds(x, y) {
+            unsafe { self.unsafe_get_pixel(x, y) }.0[0]
+        } else {
+            fallback
+        }
     }
 }
 
@@ -87,19 +127,9 @@ mod tests {
         ];
 
         for (point, test_lum) in tests {
-            let lum = image.safe_get_lum(point.x as u32, point.y as u32);
+            let lum = image.saturated_get_lum(point.x as u32, point.y as u32);
             assert_eq!(lum, test_lum);
         }
-    }
-
-    #[test]
-    fn test_fast_scale_and_translate() {
-        let point = Point2::new(42i8, -34i8);
-        let transform = Vector3::new(100i32, 150i32, 50i32);
-        assert_eq!(
-            scale_and_translate_fast(&point, &transform),
-            Point2::new(108u32, 143u32)
-        );
     }
 
     #[test]

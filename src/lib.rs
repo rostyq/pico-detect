@@ -11,6 +11,7 @@ extern crate approx;
 extern crate derive_new;
 
 mod core;
+mod geometry;
 mod localizer;
 mod detector;
 mod shaper;
