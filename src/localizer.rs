@@ -1,12 +1,14 @@
 use std::io::{Error, ErrorKind, Read};
 
-use super::core::{scale_and_translate_fast, Bintest, ComparisonNode, SaturatedGet};
 use image::GrayImage;
 use na::geometry::{Similarity2, Translation2, UnitComplex};
 use na::{Point2, Point3, Vector2, Vector3};
 
 use rand::distributions::Uniform;
 use rand::{Rng, RngCore};
+
+use super::core::{Bintest, ComparisonNode, SaturatedGet};
+use super::geometry::scale_and_translate_fast;
 
 type Tree = Vec<ComparisonNode>;
 type Predictions = Vec<Vector2<f32>>;
@@ -29,7 +31,7 @@ impl Bintest<Similarity2<f32>> for ComparisonNode {
     #[inline]
     fn find_lum(image: &GrayImage, transform: &Similarity2<f32>, point: &Point2<i8>) -> u8 {
         let point = Self::find_point(transform, point);
-        image.safe_get_lum(point.x, point.y)
+        image.saturated_get_lum(point.x, point.y)
     }
 
     #[inline]

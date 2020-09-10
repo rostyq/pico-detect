@@ -18,7 +18,7 @@ pub fn create_test_image(width: u32, height: u32) -> GrayImage {
 }
 
 pub fn load_face_landmarks_model() -> Shaper {
-    let fp = File::open("./models/shaper_5.bin").unwrap();
+    let fp = File::open("./models/shaper_5_face_landmarks.bin").unwrap();
     Shaper::from_readable(fp).unwrap()
 }
 

@@ -6,7 +6,8 @@ use std::cmp;
 use na::{Point2, Point3, Vector3};
 use image::GrayImage;
 
-use crate::core::{scale_and_translate_fast, Bintest, ComparisonNode, SaturatedGet};
+use super::core::{Bintest, ComparisonNode, SaturatedGet};
+use super::geometry::scale_and_translate_fast;
 
 impl Bintest<Point3<u32>> for ComparisonNode {
     #[inline]
@@ -20,7 +21,7 @@ impl Bintest<Point3<u32>> for ComparisonNode {
     #[inline]
     fn find_lum(image: &GrayImage, transform: &Point3<u32>, point: &Point2<i8>) -> u8 {
         let point = Self::find_point(transform, point);
-        image.safe_get_lum(point.x, point.y)
+        image.saturated_get_lum(point.x, point.y)
     }
 
     #[inline]
