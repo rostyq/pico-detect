@@ -8,6 +8,7 @@ pub fn scale_and_translate_fast(point: &Point2<i8>, transform: &Vector3<i32>) ->
 }
 
 #[inline]
+#[allow(dead_code)]
 pub fn find_similarity(
     from_points: &[Point2<f32>],
     to_points: &[Point2<f32>],
@@ -21,16 +22,16 @@ pub fn find_similarity(
     assert_eq!(from_points.len(), to_points.len());
     let size_recip: f32 = (from_points.len() as f32).recip();
 
-    let (mut mean_from, mut mean_to) = (Vector2::zeros(), Vector2::zeros());
+    let mean_from: Vector2<f32> = from_points.iter()
+        .fold(Vector2::zeros(), |acc, p| { acc + p.coords })
+        .scale(size_recip);
+
+    let mean_to: Vector2<f32> = to_points.iter()
+        .fold(Vector2::zeros(), |acc, p| { acc + p.coords })
+        .scale(size_recip);
+
     let mut sigma_from = 0f32;
     let mut cov = Matrix2::zeros();
-
-    for (from_point, to_point) in from_points.iter().zip(to_points.iter()) {
-        mean_from += from_point.coords;
-        mean_to += to_point.coords;
-    }
-    mean_to.scale_mut(size_recip);
-    mean_from.scale_mut(size_recip);
 
     for (from_point, to_point) in from_points.iter().zip(to_points.iter()) {
         let d_from = from_point.coords - mean_from;
@@ -44,11 +45,10 @@ pub fn find_similarity(
     let (svd, det) = (cov.svd(true, true), cov.determinant());
     let u = svd.u.unwrap();
     let v_t = svd.v_t.unwrap();
-    let v = v_t.transpose();
     let d = Matrix2::from_diagonal(&svd.singular_values);
     let mut s = Matrix2::identity();
 
-    if det < 0.0 || (det == 0.0 && (u.determinant() * v.determinant()) < 0.0) {
+    if det < 0.0 || (det == 0.0 && (u.determinant() * v_t.determinant()) < 0.0) {
         s[if d[(1, 1)] < d[(0, 0)] {
             (1, 1)
         } else {
