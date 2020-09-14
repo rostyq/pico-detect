@@ -4,7 +4,7 @@ extern crate pico_detect;
 
 use image::{Rgb, RgbImage};
 use nalgebra::{Point2, Point3};
-use pico_detect::{create_xorshift_rng, CascadeParameters, Detector, Localizer};
+use pico_detect::{create_xorshift_rng, CascadeParameters, Detector, Localizer, Shaper};
 use std::{env, include_bytes};
 
 fn main() {
@@ -18,10 +18,12 @@ fn main() {
 
     let facefinder_bin = include_bytes!("../models/facefinder").to_vec();
     let puploc_bin = include_bytes!("../models/puploc.bin").to_vec();
+    let shaper_bin = include_bytes!("../models/shaper_5_face_landmarks.bin").to_vec();
 
     // load detectors
     let facefinder = Detector::from_readable(facefinder_bin.as_slice()).unwrap();
     let puploc = Localizer::from_readable(puploc_bin.as_slice()).unwrap();
+    let shaper = Shaper::from_readable(shaper_bin.as_slice()).unwrap();
 
     // source of "randomness" for perturbated search for pupil
     let mut rng = create_xorshift_rng(42u64);
@@ -59,6 +61,11 @@ fn main() {
         // find pupils
         let right_pupil = puploc.perturb_localize(&gray, &right_pupil, &mut rng, nperturbs);
         let left_pupil = puploc.perturb_localize(&gray, &left_pupil, &mut rng, nperturbs);
+
+        let shape = shaper.predict(&gray, &detection.point);
+        for point in shape {
+            draw_cross(&mut image, &point);
+        }
 
         // draw red cross on the image
         draw_cross(&mut image, &right_pupil);
