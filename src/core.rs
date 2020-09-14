@@ -41,13 +41,13 @@ impl ThresholdNode {
         let mut buf = [0u8; 4];
 
         readable.read_exact(&mut buf)?;
-        let idx0 = u32::from_ne_bytes(buf) as usize;
+        let idx0 = u32::from_be_bytes(buf) as usize;
 
         readable.read_exact(&mut buf)?;
-        let idx1 = u32::from_ne_bytes(buf) as usize;
+        let idx1 = u32::from_be_bytes(buf) as usize;
 
         readable.read_exact(&mut buf)?;
-        let threshold = f32::from_ne_bytes(buf);
+        let threshold = f32::from_be_bytes(buf);
 
         Ok(Self {
             idx: (idx0, idx1),
@@ -56,9 +56,9 @@ impl ThresholdNode {
     }
 
     #[allow(dead_code)]
-    pub fn bintest(&self, feautures: &[f32]) -> bool {
-        let diff = feautures[self.idx.0] - feautures[self.idx.1];
-        diff > self.threshold
+    pub fn bintest(&self, feautures: &[u8]) -> bool {
+        let diff = feautures[self.idx.0] as i16 - feautures[self.idx.1] as i16;
+        diff as f32 > self.threshold
     }
 }
 

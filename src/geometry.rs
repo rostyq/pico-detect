@@ -11,7 +11,6 @@ pub fn scale_and_translate_fast(point: &Point2<i8>, transform: &Vector3<i32>) ->
 }
 
 #[inline]
-#[allow(dead_code)]
 pub fn find_similarity(
     from_points: &[Point2<f32>],
     to_points: &[Point2<f32>],
@@ -77,7 +76,6 @@ pub fn find_similarity(
     )
 }
 
-#[allow(dead_code)]
 #[inline]
 pub fn find_affine(
     from_points: &[Point2<f32>],
