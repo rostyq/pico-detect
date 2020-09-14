@@ -1,4 +1,7 @@
-use na::{Matrix2, Point2, Rotation2, SimilarityMatrix2, Translation2, Vector2, Vector3};
+use na::{
+    Affine2, Matrix2, MatrixMN, Point2, Rotation2, SimilarityMatrix2, Translation2, Vector2,
+    Vector3, U2, U3,
+};
 
 #[inline]
 pub fn scale_and_translate_fast(point: &Point2<i8>, transform: &Vector3<i32>) -> Point2<u32> {
@@ -22,12 +25,14 @@ pub fn find_similarity(
     assert_eq!(from_points.len(), to_points.len());
     let size_recip: f32 = (from_points.len() as f32).recip();
 
-    let mean_from: Vector2<f32> = from_points.iter()
-        .fold(Vector2::zeros(), |acc, p| { acc + p.coords })
+    let mean_from: Vector2<f32> = from_points
+        .iter()
+        .fold(Vector2::zeros(), |acc, p| acc + p.coords)
         .scale(size_recip);
 
-    let mean_to: Vector2<f32> = to_points.iter()
-        .fold(Vector2::zeros(), |acc, p| { acc + p.coords })
+    let mean_to: Vector2<f32> = to_points
+        .iter()
+        .fold(Vector2::zeros(), |acc, p| acc + p.coords)
         .scale(size_recip);
 
     let mut sigma_from = 0f32;
@@ -72,6 +77,35 @@ pub fn find_similarity(
     )
 }
 
+#[allow(dead_code)]
+#[inline]
+pub fn find_affine(
+    from_points: &[Point2<f32>],
+    to_points: &[Point2<f32>],
+    eps: f32,
+) -> Result<Affine2<f32>, &'static str> {
+    assert!(from_points.len() >= 3);
+    assert_eq!(from_points.len(), to_points.len());
+
+    let input = MatrixMN::<f32, U3, U3>::from_iterator(
+        from_points
+            .iter()
+            .take(3)
+            .flat_map(|point| *point.to_homogeneous().data),
+    );
+
+    let transformed = MatrixMN::<f32, U2, U3>::from_iterator(
+        to_points
+            .iter()
+            .take(3)
+            .flat_map(|point| *point.coords.data),
+    );
+
+    let mut transform = (transformed * input.pseudo_inverse(eps)?).fixed_resize::<U3, U3>(0.0);
+    transform[(2, 2)] = 1.0;
+    Ok(Affine2::from_matrix_unchecked(transform))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,7 +148,10 @@ mod tests {
                         let test = SimilarityMatrix2::new(Vector2::new(*x, *y), *angle, *scale);
                         println!("> test");
                         println!("  translation: {}", test.isometry.translation.vector);
-                        println!("  rotation:    {}", test.isometry.rotation.angle().to_degrees());
+                        println!(
+                            "  rotation:    {}",
+                            test.isometry.rotation.angle().to_degrees()
+                        );
                         println!("  scale:       {}", test.scaling());
 
                         let to_points: Vec<Point2<f32>> = from_points
@@ -125,12 +162,43 @@ mod tests {
                         let transform = find_similarity(&from_points, &to_points);
                         println!("> found");
                         println!("  translation: {}", transform.isometry.translation.vector);
-                        println!("  rotation:    {}", transform.isometry.rotation.angle().to_degrees());
+                        println!(
+                            "  rotation:    {}",
+                            transform.isometry.rotation.angle().to_degrees()
+                        );
                         println!("  scale:       {}", transform.scaling());
                         assert_abs_diff_eq!(transform, test, epsilon = 0.001);
                     }
                 }
             }
         }
+    }
+
+    #[test]
+    fn check_find_affine() {
+        let test = Affine2::from_matrix_unchecked(MatrixMN::<f32, U3, U3>::new(
+            3.07692308,
+            8.46153846,
+            -546.15384615,
+            -1.15384615,
+            -6.92307692,
+            392.30769231,
+            0.0,
+            0.0,
+            1.0,
+        ));
+        let from_points = vec![
+            Point2::new(40.0, 50.0),
+            Point2::new(100.0, 40.0),
+            Point2::new(150.0, 10.0),
+        ];
+
+        let to_points: Vec<Point2<f32>> = from_points
+            .iter()
+            .map(|point| test.transform_point(point))
+            .collect();
+
+        let affine = find_affine(&from_points, &to_points, 0.0001).unwrap();
+        assert_abs_diff_eq!(test, affine, epsilon = 0.001);
     }
 }
