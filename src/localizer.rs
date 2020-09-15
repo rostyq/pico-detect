@@ -118,7 +118,7 @@ impl Localizer {
     ) -> Point2<f32> {
         let mut xs: Vec<f32> = Vec::with_capacity(nperturbs);
         let mut ys: Vec<f32> = Vec::with_capacity(nperturbs);
-        let mut point = roi.clone();
+        let mut point = *roi;
 
         // println!("\ninit: {}", roi);
         for _ in 0..nperturbs {
@@ -205,12 +205,12 @@ fn odd_median_mut(numbers: &mut Vec<f32>) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::create_xorshift_rng;
-    use crate::test_utils::*;
+    use image::Luma;
 
     #[test]
     fn check_pupil_localizer_model_parsing() {
-        let puploc = load_puploc_model();
+        let puploc = Localizer::from_readable(include_bytes!("../models/puploc.bin").to_vec().as_slice())
+                .expect("parsing failed");
         let stages = &puploc.stages;
         let trees = stages[0].len();
 
@@ -238,44 +238,11 @@ mod tests {
     }
 
     #[test]
-    fn check_pupil_localization() {
-        let puploc = load_puploc_model();
-        let (image, (_, left_pupil, right_pupil)) = load_test_image();
-
-        let epsilon = 3f32;
-        let pred = puploc.localize(&image, &create_init_point(&left_pupil));
-        assert_abs_diff_eq!(left_pupil, pred, epsilon = epsilon);
-
-        let pred = puploc.localize(&image, &create_init_point(&right_pupil));
-        assert_abs_diff_eq!(right_pupil, pred, epsilon = epsilon);
-    }
-
-    #[test]
-    fn check_perturbated_pupil_localization() {
-        let puploc = load_puploc_model();
-        let (image, (_, left_pupil, right_pupil)) = load_test_image();
-
-        let mut rng = create_xorshift_rng(42u64);
-
-        let epsilon = 1.5f32;
-        let nperturbs = 31usize;
-        let pred =
-            puploc.perturb_localize(&image, &create_init_point(&left_pupil), &mut rng, nperturbs);
-        assert_abs_diff_eq!(left_pupil, pred, epsilon = epsilon);
-
-        let pred = puploc.perturb_localize(
-            &image,
-            &create_init_point(&right_pupil),
-            &mut rng,
-            nperturbs,
-        );
-        assert_abs_diff_eq!(right_pupil, pred, epsilon = epsilon);
-    }
-
-    #[test]
     fn bintest_image_edges() {
         let (width, height) = (255, 255);
-        let image = create_test_image(width, height);
+        let mut image = GrayImage::new(width, height);
+        image.put_pixel(0, 0, Luma::from([42u8]));
+        image.put_pixel(width - 1, height - 1, Luma::from([255u8]));
         let node = ComparisonNode::new([i8::MAX, i8::MAX, i8::MIN, i8::MIN]);
 
         let point = Point3::new((width as f32) / 2.0, (height as f32) / 2.0, width as f32);

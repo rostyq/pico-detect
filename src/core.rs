@@ -112,12 +112,15 @@ pub fn create_xorshift_rng(seed: u64) -> XorShiftRng {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::create_test_image;
+    use image::Luma;
 
     #[test]
     fn get_luminance_in_and_out_of_image_bounds() {
         let (width, height) = (640, 480);
-        let image = create_test_image(width, height);
+        let mut image = GrayImage::new(width, height);
+        image.put_pixel(0, 0, Luma::from([42u8]));
+        image.put_pixel(width - 1, height - 1, Luma::from([255u8]));
+
         let tests = vec![
             (Point2::new(0f32, 0f32), 42u8),
             (Point2::new(-10f32, -10f32), 42u8),

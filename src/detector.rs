@@ -1,10 +1,10 @@
+use std::cmp;
+use std::fmt;
 use std::io::{Error, ErrorKind, Read};
 use std::ops::AddAssign;
-use std::fmt;
-use std::cmp;
 
-use na::{Point2, Point3, Vector3};
 use image::GrayImage;
+use na::{Point2, Point3, Vector3};
 
 use super::core::{Bintest, ComparisonNode, SaturatedGet};
 use super::geometry::scale_and_translate_fast;
@@ -129,7 +129,7 @@ impl Detector {
     }
 
     #[inline]
-    /// Run cascade and push detections to existing collection. 
+    /// Run cascade and push detections to existing collection.
     pub fn run_cascade_mut(
         &self,
         image: &GrayImage,
@@ -157,11 +157,7 @@ impl Detector {
 
     #[inline]
     /// Run cascade with a new empty detection collection.
-    pub fn run_cascade(
-        &self,
-        image: &GrayImage,
-        params: &CascadeParameters,
-    ) -> Vec<Detection> {
+    pub fn run_cascade(&self, image: &GrayImage, params: &CascadeParameters) -> Vec<Detection> {
         let mut detections = Vec::new();
         self.run_cascade_mut(image, &mut detections, params);
         detections
@@ -186,10 +182,7 @@ impl Detector {
     /// `detections` -- mutable collection of detections;
     /// `threshold` -- if IoU is bigger then a detection is a part of a cluster.
     #[inline]
-    pub fn cluster_detections(
-        mut detections: Vec<Detection>,
-        threshold: f32,
-    ) -> Vec<Detection> {
+    pub fn cluster_detections(mut detections: Vec<Detection>, threshold: f32) -> Vec<Detection> {
         detections.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
         let mut assignments = vec![false; detections.len()];
         let mut clusters: Vec<Detection> = Vec::with_capacity(detections.len());
@@ -201,15 +194,17 @@ impl Detector {
                 assignments[i] = true;
             }
 
-            let (mut cluster, mut count) = (det1.clone(), 1usize);
-            for (det2, j) in detections[(i+1)..].iter().zip((i+1)..) {
+            let (mut cluster, mut count) = (*det1, 1usize);
+            for (det2, j) in detections[(i + 1)..].iter().zip((i + 1)..) {
                 if calculate_iou(&det1.point, &det2.point) > threshold {
                     assignments[j] = true;
                     cluster += *det2;
                     count += 1;
                 }
             }
-            if count > 1 { cluster.scale_mut((count as f32).recip()) }
+            if count > 1 {
+                cluster.scale_mut((count as f32).recip())
+            }
             clusters.push(cluster);
         }
         clusters
@@ -278,17 +273,22 @@ fn roi_to_bbox(p: &Point3<f32>) -> (Point2<f32>, Point2<f32>) {
 /// Intersection over Union (IoU)
 #[inline]
 fn calculate_iou(p0: &Point3<f32>, p1: &Point3<f32>) -> f32 {
-
     #[inline]
     fn max(v1: f32, v2: f32) -> f32 {
-        if v1 > v2 { v1 }
-        else { v2 }
+        if v1 > v2 {
+            v1
+        } else {
+            v2
+        }
     }
 
     #[inline]
     fn min(v1: f32, v2: f32) -> f32 {
-        if v1 < v2 { v1 }
-        else { v2 }
+        if v1 < v2 {
+            v1
+        } else {
+            v2
+        }
     }
 
     let b0 = roi_to_bbox(p0);
@@ -306,11 +306,12 @@ fn calculate_iou(p0: &Point3<f32>, p1: &Point3<f32>) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{load_facefinder_model, load_test_image};
 
     #[test]
     fn check_face_detector_model_parsing() {
-        let facefinder = load_facefinder_model();
+        let facefinder =
+            Detector::from_readable(include_bytes!("../models/facefinder").to_vec().as_slice())
+                .expect("parsing failed");
         assert_eq!(6, facefinder.depth);
         assert_eq!(468, facefinder.trees.len());
 
@@ -336,96 +337,47 @@ mod tests {
     }
 
     #[test]
-    fn check_classify_region() {
-        let facefinder = load_facefinder_model();
-        let (image, (face_roi, ..)) = load_test_image();
-        println!("{}", face_roi);
-
-        let score = facefinder.classify_region(&image, &face_roi);
-
-        assert!(score.is_some());
-        assert_abs_diff_eq!(score.unwrap(), 2.4434934);
-    }
-
-    #[test]
-    fn check_find_clusters() {
-        let facefinder = load_facefinder_model();
-        let (image, _data) = load_test_image();
-
-        let params = CascadeParameters::new(100, image.width(), 0.05, 1.1);
-        let detections = facefinder.find_clusters(&image, &params, 0.2);
-
-        let detections: Vec<Detection> = detections.into_iter()
-            .filter(|d| { d.score > 40.0 })
-            .collect();
-
-        assert_eq!(detections.len(), 1);
-        let detection = &detections[0];
-
-        assert_abs_diff_eq!(
-            detection.point,
-            Point3::new(290.0, 302.0, 154.0),
-            epsilon = 1.0
-        );
-        assert_abs_diff_eq!(detection.score, 58.0, epsilon = 1.0);
-    }
-
-    #[test]
     fn check_iou() {
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 50.0),
-                &Point3::<f32>::new(200.0, 100.0, 50.0)
+        let tests = vec![
+            (
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                Point3::<f32>::new(200.0, 100.0, 50.0),
+                0.0,
             ),
-            0.0
-        );
+            (
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                Point3::<f32>::new(100.0, 200.0, 50.0),
+                0.0,
+            ),
+            (
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                Point3::<f32>::new(200.0, 200.0, 50.0),
+                0.0,
+            ),
+            (
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                1.0,
+            ),
+            (
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                Point3::<f32>::new(125.0, 100.0, 50.0),
+                0.3333333,
+            ),
+            (
+                Point3::<f32>::new(100.0, 100.0, 50.0),
+                Point3::<f32>::new(100.0, 125.0, 50.0),
+                0.3333333,
+            ),
+            (
+                Point3::<f32>::new(100.0, 100.0, 60.0),
+                Point3::<f32>::new(125.0, 125.0, 65.0),
+                0.21908471,
+            ),
+        ];
 
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 50.0),
-                &Point3::<f32>::new(100.0, 200.0, 50.0)
-            ),
-            0.0
-        );
-
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 50.0),
-                &Point3::<f32>::new(200.0, 200.0, 50.0)
-            ),
-            0.0
-        );
-
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 50.0),
-                &Point3::<f32>::new(100.0, 100.0, 50.0)
-            ),
-            1.0
-        );
-
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 50.0),
-                &Point3::<f32>::new(125.0, 100.0, 50.0)
-            ),
-            0.3333333
-        );
-
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 50.0),
-                &Point3::<f32>::new(100.0, 125.0, 50.0)
-            ),
-            0.3333333
-        );
-
-        assert_abs_diff_eq!(
-            calculate_iou(
-                &Point3::<f32>::new(100.0, 100.0, 60.0),
-                &Point3::<f32>::new(125.0, 125.0, 65.0)
-            ),
-            0.21908471,
-        );
+        for (pt1, pt2, iou) in tests.iter() {
+            assert_abs_diff_eq!(calculate_iou(pt1, pt2), iou);
+        }
     }
 }

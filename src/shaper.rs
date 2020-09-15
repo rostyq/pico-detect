@@ -25,9 +25,9 @@ impl Forest {
         &self,
         image: &GrayImage,
         transform_to_image: &Affine2<f32>,
-        initial_shape: &Vec<Point2<f32>>,
-        shape: &Vec<Point2<f32>>,
-        features: &mut Vec<u8>,
+        initial_shape: &[Point2<f32>],
+        shape: &[Point2<f32>],
+        features: &mut [u8],
     ) {
         assert_eq!(self.deltas.len(), self.anchors.len());
         assert_eq!(features.len(), self.anchors.len());
@@ -40,7 +40,7 @@ impl Forest {
             .zip(self.anchors.iter())
             .zip(features.iter_mut())
         {
-            let mut point = &shape[*anchor] + transform_to_shape.transform_vector(delta);
+            let mut point = shape[*anchor] + transform_to_shape.transform_vector(delta);
             point = transform_to_image.transform_point(&point);
 
             let (x, y) = (point.x as u32, point.y as u32);
@@ -212,12 +212,17 @@ fn shape_from_readable(mut readable: impl Read, size: usize) -> Result<ShapeMatr
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-    use na::Point3;
+    use super::*;
 
     #[test]
     fn check_face_landmarks_model_parsing() {
-        let shaper = load_face_landmarks_model();
+        let shaper = Shaper::from_readable(
+            include_bytes!("../models/shaper_5_face_landmarks.bin")
+                .to_vec()
+                .as_slice(),
+        )
+        .expect("parsing failed");
+
         assert_eq!(shaper.forests.len(), 15);
         assert_eq!(shaper.forests[0].trees.len(), 500);
 
@@ -226,19 +231,5 @@ mod tests {
 
         assert_eq!(shaper.forests[0].anchors.len(), 800);
         assert_eq!(shaper.forests[0].deltas.len(), 800);
-    }
-
-    #[test]
-    fn check_face_landmarks_predict() {
-        let shaper = load_face_landmarks_model();
-        let (image, (face_roi, _, _)) = load_test_image();
-        let face_roi = Point3::new(face_roi.x as f32, face_roi.y as f32, face_roi.z as f32);
-
-        let shape = shaper.predict(&image, &face_roi);
-        println!("> predicted shape");
-
-        for (i, point) in shape.iter().enumerate() {
-            println!("{}: {}", i, point);
-        }
     }
 }

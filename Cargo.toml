@@ -38,15 +38,7 @@ version = "1"
 features = ["precommit-hook", "run-cargo-clippy"]
 
 [[bench]]
-name = "detector"
-harness = false
-
-[[bench]]
-name = "shaper"
-harness = false
-
-[[bench]]
-name = "localizer"
+name = "benchmarks"
 harness = false
 
 # uncomment for debugging
