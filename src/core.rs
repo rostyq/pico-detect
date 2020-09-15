@@ -55,10 +55,9 @@ impl ThresholdNode {
         })
     }
 
-    #[allow(dead_code)]
     pub fn bintest(&self, feautures: &[u8]) -> bool {
         let diff = feautures[self.idx.0] as i16 - feautures[self.idx.1] as i16;
-        diff as f32 > self.threshold
+        self.threshold > (diff as f32)
     }
 }
 
