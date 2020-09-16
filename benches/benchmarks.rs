@@ -30,9 +30,13 @@ fn benchmark_shaper(c: &mut Criterion) {
     let image = GrayImage::new(640, 480);
     let point = Point3::new(200., 200., 100.);
 
-    c.bench_function("Shaper.predict", |b| {
+    let mut group = c.benchmark_group("shaper");
+    group.warm_up_time(std::time::Duration::from_secs(10));
+
+    group.bench_function("Shaper.predict", |b| {
         b.iter(|| shaper.predict(black_box(&image), black_box(&point)));
     });
+    group.finish();
 }
 
 fn benchmark_localizer(c: &mut Criterion) {

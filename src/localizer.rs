@@ -23,7 +23,7 @@ impl Bintest<Similarity2<f32>> for ComparisonNode {
             &Vector3::new(
                 transform.isometry.translation.x.round() as i32,
                 transform.isometry.translation.y.round() as i32,
-                transform.scaling() as i32
+                transform.scaling() as i32,
             ),
         )
     }
@@ -209,7 +209,8 @@ mod tests {
 
     #[test]
     fn check_pupil_localizer_model_parsing() {
-        let puploc = Localizer::from_readable(include_bytes!("../models/puploc.bin").to_vec().as_slice())
+        let puploc =
+            Localizer::from_readable(include_bytes!("../models/puploc.bin").to_vec().as_slice())
                 .expect("parsing failed");
         let stages = &puploc.stages;
         let trees = stages[0].len();

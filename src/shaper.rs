@@ -49,6 +49,7 @@ impl Forest {
     }
 }
 
+/// Implements object alignment using an ensemble of regression trees.
 pub struct Shaper {
     initial_shape: Vec<Point2<f32>>,
     forests: Vec<Forest>,
@@ -58,6 +59,7 @@ pub struct Shaper {
 }
 
 impl Shaper {
+    /// Create a shaper object from a readable source.
     pub fn from_readable(mut readable: impl Read) -> Result<Self, Error> {
         let mut buf = [0u8; 4];
         readable.read_exact(&mut buf[0..1])?;
@@ -147,6 +149,21 @@ impl Shaper {
         })
     }
 
+    /// Estimate object shape on the image
+    ///
+    /// ### Arguments
+    ///
+    /// * `image` - Target image.
+    /// * `roi` - object location:
+    ///   - `roi.x` position on image x-axis,
+    ///   - `roi.y` position on image y-axis,
+    ///   - `roi.z` object size.
+    ///
+    /// ### Returns
+    ///
+    /// A collection of points each one corresponds to landmark location.
+    /// Points count is defined by a loaded shaper model.
+    #[inline]
     pub fn predict(&self, image: &GrayImage, roi: &Point3<f32>) -> Vec<Point2<f32>> {
         let mut shape = self.initial_shape.clone();
 
@@ -191,6 +208,7 @@ impl Shaper {
     }
 }
 
+#[inline]
 fn roi_to_3points(roi: &Point3<f32>) -> [Point2<f32>; 3] {
     let hs = roi.z / 2.0;
     [
