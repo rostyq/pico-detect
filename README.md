@@ -57,9 +57,9 @@ Each algorithm requires to be loaded with correspondent binary model.
 
 [pico]: https://github.com/nenadmarkus/pico
 
-[facefinder]: https://github.com/rostyslavb/pico-detect/raw/feature/shaper/models/facefinder
-[puploc]: https://github.com/rostyslavb/pico-detect/raw/feature/shaper/models/puploc.bin
-[shaper_5_face_landmarks]: https://github.com/rostyslavb/pico-detect/raw/feature/shaper/models/shaper_5_face_landmarks.bin
+[facefinder]: https://github.com/rostyslavb/pico-detect/raw/master/models/facefinder
+[puploc]: https://github.com/rostyslavb/pico-detect/raw/master/models/puploc.bin
+[shaper_5_face_landmarks]: https://github.com/rostyslavb/pico-detect/raw/master/models/shaper_5_face_landmarks.bin
 
 [puploc source]: https://drone.nenadmarkus.com/data/blog-stuff/puploc.bin
 [shape_predictor_5_face_landmarks]: https://github.com/davisking/dlib-models#shape_predictor_5_face_landmarksdatbz2
