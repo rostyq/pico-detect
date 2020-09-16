@@ -7,13 +7,13 @@ use image::{GrayImage, Rgb, RgbImage};
 use imageproc::drawing;
 use imageproc::rect::Rect;
 use nalgebra::{Point2, Point3};
-use pico_detect::{create_xorshift_rng, CascadeParameters, Detection, Detector, Localizer, Shaper};
+use pico_detect::{create_xorshift_rng, CascadeParameters, Detector, Localizer, Shaper};
 use std::include_bytes;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "pico-detect-example")]
+#[structopt(name = "pico-detect-cli")]
 struct Opt {
     #[structopt(short, long)]
     verbose: bool,
@@ -30,14 +30,15 @@ struct Opt {
 }
 
 struct Face {
-    detection: Detection,
+    score: f32,
+    roi: Point3<f32>,
     shape: Vec<Point2<f32>>,
     pupils: (Point2<f32>, Point2<f32>),
 }
 
 fn main() {
     let opt = Opt::from_args();
-    let dyn_image = image::open(&opt.input).unwrap();
+    let dyn_image = image::open(&opt.input).expect("Cannot open input image.");
     let (gray, mut image) = (dyn_image.to_luma(), dyn_image.to_rgb());
 
     let (facefinder, shaper, puploc) = load_models();
@@ -52,7 +53,7 @@ fn main() {
         draw_face(&mut image, &face);
     }
 
-    image.save(opt.output).unwrap();
+    image.save(opt.output).expect("Cannot write output.");
 }
 
 fn load_models() -> (Detector, Shaper, Localizer) {
@@ -102,7 +103,8 @@ fn detect_faces(
             );
 
             Some(Face {
-                detection: *detection,
+                score: detection.score,
+                roi: detection.point,
                 shape,
                 pupils,
             })
@@ -111,12 +113,12 @@ fn detect_faces(
 }
 
 fn draw_face(image: &mut RgbImage, face: &Face) {
-    let hs = face.detection.point.z / 2.0;
+    let hs = face.roi.z / 2.0;
     let rect = Rect::at(
-        (face.detection.point.x - hs) as i32,
-        (face.detection.point.y - hs) as i32,
+        (face.roi.x - hs) as i32,
+        (face.roi.y - hs) as i32,
     )
-    .of_size(face.detection.point.z as u32, face.detection.point.z as u32);
+    .of_size(face.roi.z as u32, face.roi.z as u32);
 
     drawing::draw_hollow_rect_mut(image, rect, Rgb([0, 0, 255]));
     for (_i, point) in face.shape.iter().enumerate() {
@@ -147,7 +149,7 @@ fn print_faces_data(faces: &[Face]) {
     for (i, face) in faces.iter().enumerate() {
         println!(
             "{} :: point: {}; score: {}",
-            i, &face.detection.point, face.detection.score
+            i, &face.roi, face.score
         );
 
         for (i, point) in face.shape.iter().enumerate() {

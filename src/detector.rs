@@ -1,7 +1,6 @@
-use std::cmp;
-use std::fmt;
 use std::io::{Error, ErrorKind, Read};
 use std::ops::AddAssign;
+use std::{cmp, fmt};
 
 use image::GrayImage;
 use na::{Point2, Point3, Vector3};
@@ -38,11 +37,7 @@ struct Tree {
     threshold: f32,
 }
 
-/// Implements object detection using cascade of decision tree classifiers.
-///
-/// Details available [here](https://tehnokv.com/posts/picojs-intro/).
-///
-/// Original implementation [here](https://github.com/nenadmarkus/pico).
+/// Implements object detection using a cascade of decision tree classifiers.
 pub struct Detector {
     depth: usize,
     dsize: usize,
@@ -52,23 +47,22 @@ pub struct Detector {
 /// Cascade parameters for `Detector`.
 #[derive(new, Debug)]
 pub struct CascadeParameters {
-    /// minimum size of an object
+    /// Minimum size of an object.
     pub min_size: u32,
-    /// maximum size of an object
+    /// Maximum size of an object.
     pub max_size: u32,
-    /// how far to move the detection window by percent of its size
+    /// How far to move the detection window by fraction of its size: (0..1).
     pub shift_factor: f32,
-    /// for multiscale processing: resize the detection window by percent
-    /// of its size when moving to the higher scale
+    /// For multiscale processing: resize the detection window by fraction
+    /// of its size when moving to the higher scale: (0..1).
     pub scale_factor: f32,
 }
 
 /// Object detection data.
 #[derive(Debug, Copy, Clone)]
 pub struct Detection {
-    /// Region of interest where
-    /// `x` and `y` center coordinates,
-    /// and `z` size of a region.
+    /// Region of interest where `x` and `y` center coordinates,
+    /// and `z` is a size of the region.
     pub point: Point3<f32>,
     /// Detection score.
     pub score: f32,
@@ -129,7 +123,7 @@ impl Detector {
     }
 
     #[inline]
-    /// Run cascade and push detections to existing collection.
+    /// Run cascade and push detections to the existing collection.
     pub fn run_cascade_mut(
         &self,
         image: &GrayImage,
@@ -179,8 +173,9 @@ impl Detector {
     /// Clusterize detections by intersection over union (IoU) metric.
     ///
     /// ### Arguments
-    /// `detections` -- mutable collection of detections;
-    /// `threshold` -- if IoU is bigger then a detection is a part of a cluster.
+    ///
+    /// - `detections` -- mutable collection of detections;
+    /// - `threshold` -- if IoU is bigger then a detection is a part of a cluster.
     #[inline]
     pub fn cluster_detections(mut detections: Vec<Detection>, threshold: f32) -> Vec<Detection> {
         detections.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
@@ -210,7 +205,7 @@ impl Detector {
         clusters
     }
 
-    /// Create detector from a readable source.
+    /// Create a detector object from a readable source.
     pub fn from_readable(mut readable: impl Read) -> Result<Self, Error> {
         let mut buffer: [u8; 4] = [0u8; 4];
         // skip first 8 bytes;
