@@ -10,10 +10,15 @@ This library is a reimplementation of _Pixel Intensity Comparison-based Object_ 
 - `Localizer`: Localization with an ensemble of randomized trees from [picojs](https://github.com/nenadmarkus/picojs) (see `lploc.js`);
 - `Shaper`: Alignment with an ensemble of regression trees from [dlib](https://github.com/davisking/dlib) (see `shape_predictor`).
 
-
 ## Example
 
 To run CLI example, which takes an image, finds all faces, detects some landmarks and pupils:
+
+> **NOTE**: [Git LFS](https://git-lfs.github.com/) is needed to resolve binary files in with `git clone`.
+>
+> If you don't want to use Git LFS you can download models direct from this repo
+> (see **model** column in the table below)
+> and put them under [`models/`](./models) directory.
 
 ```sh
 cargo run --release --example cli -- --input tests/assets/Lenna_\(test_image\).png --output result.png
