@@ -33,21 +33,22 @@ impl ComparisonNode {
 
 pub struct ThresholdNode {
     pub idx: (usize, usize),
-    pub threshold: f32,
+    pub threshold: i16,
 }
 
 impl ThresholdNode {
     pub fn from_readable(mut readable: impl io::Read) -> io::Result<Self> {
-        let mut buf = [0u8; 4];
+        let mut buf_4b = [0u8; 4];
+        let mut buf_2b = [0u8; 2];
 
-        readable.read_exact(&mut buf)?;
-        let idx0 = u32::from_be_bytes(buf) as usize;
+        readable.read_exact(&mut buf_4b)?;
+        let idx0 = u32::from_be_bytes(buf_4b) as usize;
 
-        readable.read_exact(&mut buf)?;
-        let idx1 = u32::from_be_bytes(buf) as usize;
+        readable.read_exact(&mut buf_4b)?;
+        let idx1 = u32::from_be_bytes(buf_4b) as usize;
 
-        readable.read_exact(&mut buf)?;
-        let threshold = f32::from_be_bytes(buf);
+        readable.read_exact(&mut buf_2b)?;
+        let threshold = i16::from_be_bytes(buf_2b);
 
         Ok(Self {
             idx: (idx0, idx1),
@@ -57,7 +58,7 @@ impl ThresholdNode {
 
     pub fn bintest(&self, feautures: &[u8]) -> bool {
         let diff = feautures[self.idx.0] as i16 - feautures[self.idx.1] as i16;
-        self.threshold > (diff as f32)
+        self.threshold > diff
     }
 }
 
