@@ -10,6 +10,9 @@ extern crate approx;
 #[macro_use]
 extern crate derive_new;
 
+#[allow(dead_code)]
+mod utils;
+
 mod core;
 mod geometry;
 mod localizer;
