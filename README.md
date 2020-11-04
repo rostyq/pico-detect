@@ -16,12 +16,12 @@ To run CLI example, which takes an image, finds all faces, detects some landmark
 
 > **NOTE**: [Git LFS](https://git-lfs.github.com/) is needed to resolve binary files with `git clone`.
 >
-> If you don't want to use Git LFS you can download models direct from this repo
+> If you don't want to use Git LFS you can download models (and test image) direct from this repo
 > (see **model** column in the table below)
 > and put them under [`models/`](./models) directory.
 
 ```sh
-cargo run --release --example cli -- --input tests/assets/Lenna_\(test_image\).png --output result.png
+cargo run --release --example cli -- --input "tests/assets/Lenna_(test_image).png" --output result.png
 ```
 
 Output image `result.png` should be like this:
@@ -38,14 +38,6 @@ Each algorithm requires to be loaded with correspondent binary model.
 | [puploc]                  | `Localizer` | [puploc source]                    | Human eye pupil localizer |
 | [shaper_5_face_landmarks] | `Shaper`    | [shape_predictor_5_face_landmarks] | Human 5 face landmarks    |
 
-## Roadmap
-
-* [x] object detection;
-* [x] object localization;
-* [x] shape prediction;
-* [x] cli example;
-* [ ] WebAssembly support (`wasm32-unknown-unknown` target) and web example.
-
 ## References
 
 1. [N. Markus, M. Frljak, I. S. Pandzic, J. Ahlberg and R. Forchheimer, "Object Detection with Pixel Intensity Comparisons Organized in Decision Trees"](http://arxiv.org/abs/1305.4537)
@@ -55,7 +47,7 @@ Each algorithm requires to be loaded with correspondent binary model.
 3. [One Millisecond Face Alignment with an Ensemble of Regression Trees](https://www.cv-foundation.org/openaccess/content_cvpr_2014/papers/Kazemi_One_Millisecond_Face_2014_CVPR_paper.pdf)
 
 [crates]: https://crates.io/crates/pico-detect
-[docs]: https://docs.rs/pico-detect/0.2.0/pico_detect
+[docs]: https://docs.rs/pico-detect/pico_detect
 [docs-badge]: https://docs.rs/pico-detect/badge.svg
 [crates-badge]: https://img.shields.io/crates/v/pico-detect
 [license-badge]: https://img.shields.io/crates/l/pico-detect

@@ -7,8 +7,8 @@ use nalgebra::{
 /// for fast transformation
 #[derive(Copy, Clone, Debug)]
 pub struct ISimilarity2 {
-    translation: Translation2<i32>,
-    scaling: u32,
+    pub translation: Translation2<i32>,
+    pub scaling: u32,
     // TODO add rotation
 }
 
