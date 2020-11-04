@@ -1,13 +1,47 @@
-use na::{
+use nalgebra::{
     Affine2, Matrix2, MatrixMN, Point2, Rotation2, SimilarityMatrix2, Translation2, Vector2,
-    Vector3, U2, U3,
+    Similarity2, U3, U2,
 };
 
-#[inline]
-pub fn scale_and_translate_fast(point: &Point2<i8>, transform: &Vector3<i32>) -> Point2<u32> {
-    let x = (((transform.x << 8) + (point.x as i32) * transform.z) >> 8) as u32;
-    let y = (((transform.y << 8) + (point.y as i32) * transform.z) >> 8) as u32;
-    Point2::new(x, y)
+/// Implements similarity using integer math
+/// for fast transformation
+#[derive(Copy, Clone, Debug)]
+pub struct ISimilarity2 {
+    translation: Translation2<i32>,
+    scaling: u32,
+    // TODO add rotation
+}
+
+impl From<Similarity2<f32>> for ISimilarity2 {
+    fn from(s: Similarity2<f32>) -> Self {
+        Self::from_components(
+            s.isometry.translation.x as i32,
+            s.isometry.translation.y as i32,
+            s.scaling() as u32,
+        )
+    }
+}
+
+impl ISimilarity2 {
+    #[inline]
+    pub fn from_components(x: i32, y: i32, scaling: u32) -> Self {
+        Self {
+            translation: Translation2::new(x, y),
+            scaling,
+        }
+    }
+
+    #[inline(always)]
+    pub fn transform_point(&self, point: Point2<i32>) -> Point2<i32> {
+        let x = ((self.translation.vector.x << 8) + point.x * (self.scaling as i32)) >> 8;
+        let y = ((self.translation.vector.y << 8) + point.y * (self.scaling as i32)) >> 8;
+        Point2::new(x, y)
+    }
+
+    #[inline(always)]
+    pub fn transform_point_i8(&self, point: Point2<i8>) -> Point2<i32> {
+        self.transform_point(Point2::new(point.x as i32, point.y as i32))
+    }
 }
 
 #[inline]
@@ -107,14 +141,21 @@ pub fn find_affine(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nalgebra::Isometry2;
 
     #[test]
     fn test_fast_scale_and_translate() {
         let point = Point2::new(42i8, -34i8);
-        let transform = Vector3::new(100i32, 150i32, 50i32);
+        let transform = Similarity2::from_isometry(
+            Isometry2::translation(100f32, 150f32),
+            50f32
+        );
+
+        let transform = ISimilarity2::from(transform);
+
         assert_eq!(
-            scale_and_translate_fast(&point, &transform),
-            Point2::new(108u32, 143u32)
+            transform.transform_point_i8(point),
+            Point2::new(108i32, 143i32)
         );
     }
 

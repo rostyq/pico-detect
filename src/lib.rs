@@ -1,25 +1,29 @@
-extern crate image;
-extern crate nalgebra as na;
+pub extern crate image;
+pub extern crate nalgebra;
 extern crate rand;
-extern crate rand_xorshift;
+
+#[macro_use]
+extern crate derive_new;
 
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
 
-#[macro_use]
-extern crate derive_new;
-
-#[allow(dead_code)]
 mod utils;
-
-mod core;
+mod iou;
+mod bintest;
+mod node;
 mod geometry;
-mod localizer;
 mod detector;
+mod detection;
+mod multiscale;
+mod localizer;
 mod shaper;
 
+pub use geometry::ISimilarity2;
+pub use detector::Detector;
+pub use detection::Detection;
+pub use multiscale::MultiScale;
 pub use localizer::Localizer;
-pub use detector::{Detector, CascadeParameters, Detection};
+pub use imageproc::rect::{Rect, RectPosition};
 pub use shaper::Shaper;
-pub use crate::core::create_xorshift_rng;

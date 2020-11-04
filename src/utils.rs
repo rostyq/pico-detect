@@ -1,6 +1,7 @@
 use image::GenericImageView;
+use nalgebra::Point2;
 
-#[inline]
+#[inline(always)]
 fn saturate_coordinate(value: u32, bound: u32) -> u32 {
     if value < bound {
         value
@@ -9,7 +10,7 @@ fn saturate_coordinate(value: u32, bound: u32) -> u32 {
     }
 }
 
-#[inline]
+#[inline(always)]
 pub fn saturating_get_pixel<I>(image: &I, x: i32, y: i32) -> I::Pixel
 where
     I: GenericImageView,
@@ -27,7 +28,7 @@ where
     unsafe { image.unsafe_get_pixel(x, y) }
 }
 
-#[inline]
+#[inline(always)]
 pub fn get_pixel_with_fallback<I>(image: &I, x: i32, y: i32, fallback: I::Pixel) -> I::Pixel
 where
     I: GenericImageView,
@@ -43,6 +44,27 @@ where
             fallback
         }
     }
+}
+
+/// (x, y, size) -> (x0, x1, y0, y1)
+#[inline]
+pub fn roi_to_bbox(point: Point2<f32>, size: f32) -> (Point2<f32>, Point2<f32>) {
+    let h = size / 2.0;
+    (
+        Point2::new(
+            point.x - h,
+            point.y - h
+        ),
+        Point2::new(
+            point.x + h,
+            point.y + h
+        ),
+    )
+}
+
+pub fn odd_median_mut(numbers: &mut[f32]) -> f32 {
+    numbers.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    numbers[numbers.len() / 2]
 }
 
 #[cfg(test)]

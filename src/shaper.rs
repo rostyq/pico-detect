@@ -1,10 +1,13 @@
 use std::io::{Error, ErrorKind, Read};
 
-use image::GrayImage;
-use na::{Affine2, Dynamic, MatrixMN, Point2, Point3, Vector2, U2};
+use image::{GenericImageView, Luma};
+use imageproc::rect::Rect;
+use nalgebra::{Affine2, Dynamic, MatrixMN, Point2, Vector2, U2};
 
-use super::core::{SafeGet, ThresholdNode};
+use super::bintest::FeatureBintest;
 use super::geometry::{find_affine, find_similarity};
+use super::node::ThresholdNode;
+use super::utils::get_pixel_with_fallback;
 
 pub type ShapeMatrix = MatrixMN<f32, U2, Dynamic>;
 
@@ -21,16 +24,18 @@ struct Forest {
 
 impl Forest {
     #[inline]
-    fn extract_feature_pixel_values(
+    fn extract_feature_pixel_values<I>(
         &self,
-        image: &GrayImage,
+        image: &I,
         transform_to_image: &Affine2<f32>,
         initial_shape: &[Point2<f32>],
         shape: &[Point2<f32>],
         features: &mut [u8],
-    ) {
-        assert_eq!(self.deltas.len(), self.anchors.len());
-        assert_eq!(features.len(), self.anchors.len());
+    ) where
+        I: GenericImageView<Pixel = Luma<u8>>,
+    {
+        debug_assert_eq!(self.deltas.len(), self.anchors.len());
+        debug_assert_eq!(features.len(), self.anchors.len());
 
         let transform_to_shape = find_similarity(&initial_shape, &shape);
 
@@ -43,8 +48,9 @@ impl Forest {
             let mut point = shape[*anchor] + transform_to_shape.transform_vector(delta);
             point = transform_to_image.transform_point(&point);
 
-            let (x, y) = (point.x as u32, point.y as u32);
-            *feature = image.safe_get_lum(x, y, 0u8);
+            *feature =
+                get_pixel_with_fallback(image, point.x as i32, point.y as i32, Luma::from([0u8])).0
+                    [0];
         }
     }
 }
@@ -53,9 +59,9 @@ impl Forest {
 pub struct Shaper {
     initial_shape: Vec<Point2<f32>>,
     forests: Vec<Forest>,
-    _depth: usize,
-    _dsize: usize,
-    _features: usize,
+    depth: usize,
+    dsize: usize,
+    features: Vec<u8>,
 }
 
 impl Shaper {
@@ -102,8 +108,10 @@ impl Shaper {
             let mut trees = Vec::with_capacity(forest_size);
             for _ in 0..forest_size {
                 let mut nodes = Vec::with_capacity(splits_count);
+                let mut buf10 = [0u8; 10];
                 for _ in 0..splits_count {
-                    nodes.push(ThresholdNode::from_readable(readable.by_ref())?);
+                    readable.read_exact(&mut buf10)?;
+                    nodes.push(ThresholdNode::from(buf10));
                 }
 
                 let mut shifts = Vec::with_capacity(leafs_count);
@@ -143,9 +151,9 @@ impl Shaper {
         Ok(Self {
             initial_shape,
             forests,
-            _depth: tree_depth as usize,
-            _dsize: splits_count,
-            _features: nfeatures,
+            depth: tree_depth as usize,
+            dsize: splits_count,
+            features: vec![0u8; nfeatures],
         })
     }
 
@@ -164,18 +172,13 @@ impl Shaper {
     /// A collection of points each one corresponds to landmark location.
     /// Points count is defined by a loaded shaper model.
     #[inline]
-    pub fn predict(&self, image: &GrayImage, roi: &Point3<f32>) -> Vec<Point2<f32>> {
+    pub fn predict<I>(&mut self, image: &I, rect: Rect) -> Vec<Point2<f32>>
+    where
+        I: GenericImageView<Pixel = Luma<u8>>,
+    {
         let mut shape = self.initial_shape.clone();
 
-        let norm_corners = [
-            Point2::new(0.0, 0.0),
-            Point2::new(1.0, 0.0),
-            Point2::new(1.0, 1.0),
-        ];
-        let roi_corners = roi_to_3points(roi);
-        let transform_to_image = find_affine(&norm_corners, &roi_corners, 0.0001).unwrap();
-
-        let mut features: Vec<u8> = vec![0u8; self._features];
+        let transform_to_image = find_transform_to_image(rect);
 
         for forest in self.forests.iter() {
             forest.extract_feature_pixel_values(
@@ -183,15 +186,13 @@ impl Shaper {
                 &transform_to_image,
                 &self.initial_shape,
                 &shape,
-                &mut features,
+                self.features.as_mut(),
             );
 
             for tree in forest.trees.iter() {
-                let idx = (0..self._depth)
-                    .fold(0, |idx, _| {
-                        2 * idx + 1 + tree.nodes[idx].bintest(&features) as usize
-                    })
-                    .saturating_sub(self._dsize);
+                let idx = (0..self.depth).fold(0, |idx, _| {
+                    2 * idx + 1 + tree.nodes[idx].bintest(&self.features) as usize
+                }) - self.dsize;
 
                 shape.iter_mut().zip(tree.shifts[idx].iter()).for_each(
                     |(shape_point, shift_vector)| {
@@ -209,13 +210,25 @@ impl Shaper {
 }
 
 #[inline]
-fn roi_to_3points(roi: &Point3<f32>) -> [Point2<f32>; 3] {
-    let hs = roi.z / 2.0;
-    [
-        Point2::new(roi.x - hs, roi.y - hs),
-        Point2::new(roi.x + hs, roi.y - hs),
-        Point2::new(roi.x + hs, roi.y + hs),
-    ]
+fn find_transform_to_image(rect: Rect) -> Affine2<f32> {
+    let norm_corners = [
+        Point2::new(0.0, 0.0),
+        Point2::new(1.0, 0.0),
+        Point2::new(1.0, 1.0),
+    ];
+    let (left, right, top, bottom) = (
+        rect.left() as f32,
+        rect.right() as f32,
+        rect.top() as f32,
+        rect.bottom() as f32,
+    );
+
+    let rect_corners = [
+        Point2::new(left, top),
+        Point2::new(right, top),
+        Point2::new(right, bottom),
+    ];
+    find_affine(&norm_corners, &rect_corners, 0.0001).unwrap()
 }
 
 fn shape_from_readable(mut readable: impl Read, size: usize) -> Result<ShapeMatrix, Error> {
