@@ -8,7 +8,7 @@ use super::detector::Detector;
 use super::geometry::ISimilarity2;
 
 /// Multiscale detection for `Detector`.
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct MultiScale {
     min_size: u32,
     max_size: u32,
