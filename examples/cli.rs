@@ -3,13 +3,14 @@ extern crate imageproc;
 extern crate nalgebra;
 extern crate pico_detect;
 
+use std::path::PathBuf;
+
 use image::{GrayImage, Rgb, RgbImage};
 use imageproc::drawing;
-use imageproc::rect::Rect;
-use nalgebra::{Point2, Point3};
-use pico_detect::{create_xorshift_rng, CascadeParameters, Detector, Localizer, Shaper};
-use std::include_bytes;
-use std::path::PathBuf;
+use nalgebra::{Isometry2, Point2, Similarity2};
+use pico_detect::{Detection, Detector, Localizer, MultiScale, Rect, Shaper};
+use rand::SeedableRng;
+use rand_xorshift::XorShiftRng;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -27,11 +28,13 @@ struct Opt {
     scale_factor: f32,
     #[structopt(long, default_value = "0.05")]
     shift_factor: f32,
+    #[structopt(long, default_value = "0.2")]
+    threshold: f32,
 }
 
 struct Face {
     score: f32,
-    roi: Point3<f32>,
+    rect: Rect,
     shape: Vec<Point2<f32>>,
     pupils: (Point2<f32>, Point2<f32>),
 }
@@ -41,9 +44,9 @@ fn main() {
     let dyn_image = image::open(&opt.input).expect("Cannot open input image.");
     let (gray, mut image) = (dyn_image.to_luma(), dyn_image.to_rgb());
 
-    let (facefinder, shaper, puploc) = load_models();
+    let (facefinder, mut shaper, puploc) = load_models();
 
-    let faces = detect_faces(&opt, &gray, &facefinder, &shaper, &puploc);
+    let faces = detect_faces(&opt, &gray, &facefinder, &mut shaper, &puploc);
 
     if opt.verbose {
         print_faces_data(&faces);
@@ -72,39 +75,43 @@ fn detect_faces(
     opt: &Opt,
     gray: &GrayImage,
     detector: &Detector,
-    shaper: &Shaper,
+    shaper: &mut Shaper,
     localizer: &Localizer,
 ) -> Vec<Face> {
-    // parameters for face detection
-    let cascade_params = CascadeParameters::new(
-        opt.min_size,
-        gray.width(),
-        opt.shift_factor,
-        opt.scale_factor,
-    );
+    // initialize multiscale
+    let multiscale = MultiScale::default()
+        .with_size_range(opt.min_size, gray.width())
+        .with_shift_factor(opt.shift_factor)
+        .with_scale_factor(opt.scale_factor);
 
     // source of "randomness" for perturbated search for pupil
-    let mut rng = create_xorshift_rng(42u64);
+    let mut rng = XorShiftRng::seed_from_u64(42u64);
     let nperturbs = 31usize;
 
-    let detections = detector.find_clusters(&gray, &cascade_params, 0.2);
-
-    detections
+    Detection::clusterize(multiscale.run(detector, gray).as_mut(), opt.threshold)
         .iter()
         .filter_map(|detection| {
-            if detection.score < 40.0 {
+            if detection.score() < 40.0 {
                 return None;
             }
-            let shape = shaper.predict(&gray, &detection.point);
+
+            let (center, size) = (detection.center(), detection.size());
+            let rect = Rect::at(
+                (center.x - size / 2.0) as i32,
+                (center.y - size / 2.0) as i32,
+            )
+            .of_size(size as u32, size as u32);
+
+            let shape = shaper.predict(gray, rect);
             let pupils = Shape5::find_eyes_roi(&shape);
             let pupils = (
-                localizer.perturb_localize(&gray, &pupils.0, &mut rng, nperturbs),
-                localizer.perturb_localize(&gray, &pupils.1, &mut rng, nperturbs),
+                localizer.perturb_localize(gray, pupils.0, &mut rng, nperturbs),
+                localizer.perturb_localize(gray, pupils.1, &mut rng, nperturbs),
             );
 
             Some(Face {
-                score: detection.score,
-                roi: detection.point,
+                rect,
+                score: detection.score(),
                 shape,
                 pupils,
             })
@@ -113,21 +120,10 @@ fn detect_faces(
 }
 
 fn draw_face(image: &mut RgbImage, face: &Face) {
-    let hs = face.roi.z / 2.0;
-    let rect = Rect::at(
-        (face.roi.x - hs) as i32,
-        (face.roi.y - hs) as i32,
-    )
-    .of_size(face.roi.z as u32, face.roi.z as u32);
+    drawing::draw_hollow_rect_mut(image, face.rect, Rgb([0, 0, 255]));
 
-    drawing::draw_hollow_rect_mut(image, rect, Rgb([0, 0, 255]));
     for (_i, point) in face.shape.iter().enumerate() {
-        drawing::draw_cross_mut(
-            image,
-            Rgb([0, 255, 0]),
-            point.x as i32,
-            point.y as i32,
-        );
+        drawing::draw_cross_mut(image, Rgb([0, 255, 0]), point.x as i32, point.y as i32);
     }
 
     drawing::draw_cross_mut(
@@ -147,10 +143,7 @@ fn draw_face(image: &mut RgbImage, face: &Face) {
 fn print_faces_data(faces: &[Face]) {
     println!("Faces detected: {}.", faces.len());
     for (i, face) in faces.iter().enumerate() {
-        println!(
-            "{} :: point: {}; score: {}",
-            i, &face.roi, face.score
-        );
+        println!("{} :: rect: {:?}; score: {}", i, &face.rect, face.score);
 
         for (i, point) in face.shape.iter().enumerate() {
             println!("\tlandmark {}: {}", i, &point);
@@ -190,7 +183,7 @@ impl Shape5 {
         )
     }
 
-    fn find_eyes_roi(shape: &[Point2<f32>]) -> (Point3<f32>, Point3<f32>) {
+    fn find_eyes_roi(shape: &[Point2<f32>]) -> (Similarity2<f32>, Similarity2<f32>) {
         assert_eq!(shape.len(), Self::size());
         let (li, lo) = (
             &shape[Self::LeftInnerEyeCorner as usize],
@@ -203,11 +196,10 @@ impl Shape5 {
 
         let (dl, dr) = (lo - li, ri - ro);
         let (l, r) = (li + dl.scale(0.5), ro + dr.scale(0.5));
-        let mut l = l.to_homogeneous();
-        l.z = dl.norm() * 1.1;
-        let mut r = r.to_homogeneous();
-        r.z = dr.norm() * 1.1;
 
-        (l.into(), r.into())
+        (
+            Similarity2::from_isometry(Isometry2::translation(l.x, l.y), dl.norm() * 1.1),
+            Similarity2::from_isometry(Isometry2::translation(r.x, r.y), dr.norm() * 1.1),
+        )
     }
 }
