@@ -47,7 +47,7 @@ Each algorithm requires to be loaded with correspondent binary model.
 3. [One Millisecond Face Alignment with an Ensemble of Regression Trees](https://www.cv-foundation.org/openaccess/content_cvpr_2014/papers/Kazemi_One_Millisecond_Face_2014_CVPR_paper.pdf)
 
 [crates]: https://crates.io/crates/pico-detect
-[docs]: https://docs.rs/pico-detect/pico_detect
+[docs]: https://docs.rs/pico-detect
 [docs-badge]: https://docs.rs/pico-detect/badge.svg
 [crates-badge]: https://img.shields.io/crates/v/pico-detect
 [license-badge]: https://img.shields.io/crates/l/pico-detect
