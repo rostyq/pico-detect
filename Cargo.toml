@@ -22,7 +22,7 @@ bench = false
 
 [dependencies]
 derive-new = "0.5"
-nalgebra = ">=0.21"
+nalgebra = "^0.21"
 image = { version = "^0.23", default-features = false }
 imageproc = { version = "^0.21", default-features = false }
 rand = "^0.7"
