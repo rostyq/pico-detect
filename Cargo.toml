@@ -21,22 +21,22 @@ name = "pico_detect"
 bench = false
 
 [dependencies]
-derive-new = "0.5"
-nalgebra = "^0.21"
-image = { version = "^0.23", default-features = false }
-imageproc = { version = "^0.21", default-features = false }
-rand = "^0.7"
+derive-new = "0.5.9"
+nalgebra = "0.29.0"
+image = { version = "0.23.14", default-features = false }
+imageproc = { version = "0.22.0", default-features = false }
+rand = "0.8.4"
 
 [dev-dependencies]
-image = "^0.23"
-imageproc = "^0.21"
-criterion = "0.3.3"
-structopt = "0.3"
-approx = "0.4.0"
-rand_xorshift = "0.2.0"
+image = "0.23.14"
+imageproc = "0.22.0"
+criterion = "0.3.5"
+structopt = "0.3.23"
+approx = "0.5.0"
+rand_xorshift = "0.3.0"
 
 [dev-dependencies.cargo-husky]
-version = "1"
+version = "1.5.0"
 features = ["precommit-hook", "run-cargo-clippy"]
 
 [[bench]]

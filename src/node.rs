@@ -1,6 +1,8 @@
-use nalgebra::Point2;
 use std::convert::TryInto;
 use std::mem;
+use std::mem::MaybeUninit;
+
+use nalgebra::Point2;
 
 #[derive(Debug, PartialEq)]
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);
@@ -14,27 +16,35 @@ impl From<[i8; 4]> for ComparisonNode {
 
 impl From<[u8; 4]> for ComparisonNode {
     fn from(data: [u8; 4]) -> Self {
-        let mut out: [i8; 4] = unsafe { mem::MaybeUninit::uninit().assume_init() };
-        data.iter()
-            .zip(out.iter_mut())
-            .for_each(|(v, o)| *o = i8::from_le_bytes(v.to_le_bytes()));
-        Self::from(out)
+        let mut out: [MaybeUninit<i8>; 4] = unsafe {
+            mem::MaybeUninit::uninit().assume_init()
+        };
+
+        for (pos, o) in data.iter().zip(out.iter_mut()) {
+            *unsafe { o.assume_init_mut() } = i8::from_le_bytes(pos.to_le_bytes());
+        }
+
+        Self::from(
+            unsafe {
+                mem::transmute::<_, [i8; 4]>(out)
+            }
+        )
     }
 }
 
-impl Into<[i8; 4]> for ComparisonNode {
-    fn into(self) -> [i8; 4] {
-        [self.0.y, self.0.x, self.1.y, self.1.x]
+impl From<ComparisonNode> for [i8; 4] {
+    fn from(node: ComparisonNode) -> [i8; 4] {
+        [node.0.y, node.0.x, node.1.y, node.1.x]
     }
 }
 
-impl Into<[u8; 4]> for ComparisonNode {
-    fn into(self) -> [u8; 4] {
+impl From<ComparisonNode> for [u8; 4] {
+    fn from(node: ComparisonNode) -> [u8; 4] {
         [
-            self.0.y.to_le_bytes()[0],
-            self.0.x.to_le_bytes()[0],
-            self.1.y.to_le_bytes()[0],
-            self.1.x.to_le_bytes()[0],
+            node.0.y.to_le_bytes()[0],
+            node.0.x.to_le_bytes()[0],
+            node.1.y.to_le_bytes()[0],
+            node.1.x.to_le_bytes()[0],
         ]
     }
 }
@@ -56,18 +66,29 @@ impl From<[u8; 10]> for ThresholdNode {
     }
 }
 
-impl Into<[u8; 10]> for ThresholdNode {
-    fn into(self) -> [u8; 10] {
-        let mut out: [u8; 10] = unsafe { mem::MaybeUninit::uninit().assume_init() };
-        let idx0 = (self.idx.0 as u32).to_be_bytes();
-        let idx1 = (self.idx.1 as u32).to_be_bytes();
-        let threshold = self.threshold.to_be_bytes();
-        idx0.iter()
-            .chain(idx1.iter())
-            .chain(threshold.iter())
-            .zip(out.iter_mut())
-            .for_each(|(v, o)| *o = *v);
-        out
+impl From<ThresholdNode> for [u8; 10] {
+    fn from(node: ThresholdNode) -> Self {
+        let idx0 = (node.idx.0 as u32).to_be_bytes(); // 4 bytes
+        let idx1 = (node.idx.1 as u32).to_be_bytes(); // 4 bytes
+        let threshold = node.threshold.to_be_bytes(); // 2 bytes
+                                                                // = 10 bytes
+
+        let vals =
+            idx0.iter()
+                .chain(idx1.iter())
+                .chain(threshold.iter());
+
+        let mut out: [MaybeUninit<u8>; 10] = unsafe {
+            mem::MaybeUninit::uninit().assume_init()
+        };
+
+        for (pos, o) in vals.zip(out.iter_mut()) {
+            *unsafe { o.assume_init_mut() } = *pos;
+        }
+
+        unsafe {
+            mem::transmute::<_, [u8; 10]>(out)
+        }
     }
 }
 

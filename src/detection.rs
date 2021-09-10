@@ -74,7 +74,7 @@ impl Detection {
             let mut score = det1.score();
             let mut count = 1usize;
             for (det2, j) in detections[(i + 1)..].iter().zip((i + 1)..) {
-                if det1.iou(&det2) > threshold {
+                if det1.iou(det2) > threshold {
                     assignments[j] = true;
                     tvec += det2.center().coords;
                     score += det2.score();

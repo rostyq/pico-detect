@@ -91,12 +91,15 @@ impl Localizer {
 
         // println!("\ninit: {}", initial_roi);
         for _ in 0..nperturbs {
-            let mut roi = initial_roi.clone();
+            let mut roi = initial_roi;
+
             roi.prepend_scaling_mut(rng.sample(self.distrs.0));
+
             roi.isometry.translation.vector.x = scaling.mul_add(
                 rng.sample(self.distrs.1),
                 initial_roi.isometry.translation.vector.x,
             );
+
             roi.isometry.translation.vector.y = scaling.mul_add(
                 rng.sample(self.distrs.1),
                 initial_roi.isometry.translation.vector.y,
