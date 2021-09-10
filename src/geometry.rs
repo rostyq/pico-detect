@@ -1,7 +1,4 @@
-use nalgebra::{
-    Affine2, Matrix2, MatrixMN, Point2, Rotation2, SimilarityMatrix2, Translation2, Vector2,
-    Similarity2, U3, U2,
-};
+use nalgebra::{Affine2, Matrix2, OMatrix, Point2, Rotation2, Similarity2, SimilarityMatrix2, Translation2, U2, U3, Vector2};
 
 /// Implements similarity using integer math
 /// for fast transformation
@@ -119,36 +116,51 @@ pub fn find_affine(
     assert!(from_points.len() >= 3);
     assert_eq!(from_points.len(), to_points.len());
 
-    let input = MatrixMN::<f32, U3, U3>::from_iterator(
+    let input = OMatrix::<f32, U3, U3>::from_iterator(
         from_points
             .iter()
             .take(3)
-            .flat_map(|point| *point.to_homogeneous().data),
+            .flat_map(|point|
+                point
+                    .to_homogeneous()
+                    .data
+                    .as_slice()
+                    .to_vec(),
+            ),
     );
 
-    let transformed = MatrixMN::<f32, U2, U3>::from_iterator(
+    let transformed = OMatrix::<f32, U2, U3>::from_iterator(
         to_points
             .iter()
             .take(3)
-            .flat_map(|point| *point.coords.data),
+            .flat_map(|point|
+                point
+                    .coords
+                    .data
+                    .as_slice()
+                    .to_vec(),
+            ),
     );
 
-    let mut transform = (transformed * input.pseudo_inverse(eps)?).fixed_resize::<U3, U3>(0.0);
+    let mut transform = (transformed * input.pseudo_inverse(eps)?).fixed_resize::<3, 3>(0.0);
+
     transform[(2, 2)] = 1.0;
+
     Ok(Affine2::from_matrix_unchecked(transform))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use nalgebra::Isometry2;
+
+    use super::*;
 
     #[test]
     fn test_fast_scale_and_translate() {
         let point = Point2::new(42i8, -34i8);
         let transform = Similarity2::from_isometry(
             Isometry2::translation(100f32, 150f32),
-            50f32
+            50f32,
         );
 
         let transform = ISimilarity2::from(transform);
@@ -215,7 +227,7 @@ mod tests {
 
     #[test]
     fn check_find_affine() {
-        let test = Affine2::from_matrix_unchecked(MatrixMN::<f32, U3, U3>::new(
+        let test = Affine2::from_matrix_unchecked(OMatrix::<f32, U3, U3>::new(
             3.07692308,
             8.46153846,
             -546.15384615,

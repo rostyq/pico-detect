@@ -136,5 +136,5 @@ fn validate_pupil_localization() {
 pub fn load_test_image() -> GrayImage {
     image::open("./tests/assets/Lenna_(test_image).png")
         .unwrap()
-        .to_luma()
+        .to_luma8()
 }

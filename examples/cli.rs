@@ -42,7 +42,7 @@ struct Face {
 fn main() {
     let opt = Opt::from_args();
     let dyn_image = image::open(&opt.input).expect("Cannot open input image.");
-    let (gray, mut image) = (dyn_image.to_luma(), dyn_image.to_rgb());
+    let (gray, mut image) = (dyn_image.to_luma8(), dyn_image.to_rgb8());
 
     let (facefinder, mut shaper, puploc) = load_models();
 

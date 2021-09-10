@@ -1,3 +1,5 @@
 /target
 Cargo.lock
 result.jpg
+.DS_Store
+.idea/

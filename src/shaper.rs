@@ -2,14 +2,14 @@ use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 use imageproc::rect::Rect;
-use nalgebra::{Affine2, Dynamic, MatrixMN, Point2, Vector2, U2};
+use nalgebra::{Affine2, Dynamic, OMatrix, Point2, Vector2, U2};
 
 use super::bintest::FeatureBintest;
 use super::geometry::{find_affine, find_similarity};
 use super::node::ThresholdNode;
 use super::utils::get_pixel_with_fallback;
 
-pub type ShapeMatrix = MatrixMN<f32, U2, Dynamic>;
+pub type ShapeMatrix = OMatrix<f32, U2, Dynamic>;
 
 struct Tree {
     nodes: Vec<ThresholdNode>,
@@ -37,7 +37,11 @@ impl Forest {
         debug_assert_eq!(self.deltas.len(), self.anchors.len());
         debug_assert_eq!(features.len(), self.anchors.len());
 
-        let transform_to_shape = find_similarity(&initial_shape, &shape);
+        let transform_to_shape =
+            find_similarity(
+                initial_shape,
+                shape,
+            );
 
         for ((delta, anchor), feature) in self
             .deltas
