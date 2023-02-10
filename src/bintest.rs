@@ -2,7 +2,7 @@ use image::{GenericImageView, Luma};
 
 use super::geometry::ISimilarity2;
 use super::node::{ComparisonNode, ThresholdNode};
-use super::utils::saturating_get_pixel;
+use super::utils::get_nearest_pixel_i64;
 
 pub trait FeatureBintest<T> {
     fn bintest(&self, features: T) -> bool;
@@ -29,8 +29,8 @@ where
         let p0 = transform.transform_point_i8(self.0);
         let p1 = transform.transform_point_i8(self.1);
 
-        let lum0 = saturating_get_pixel(image, p0.x, p0.y).0[0];
-        let lum1 = saturating_get_pixel(image, p1.x, p1.y).0[0];
+        let lum0 = get_nearest_pixel_i64(image, p0.x.into(), p0.y.into()).0[0];
+        let lum1 = get_nearest_pixel_i64(image, p1.x.into(), p1.y.into()).0[0];
 
         lum0 > lum1
     }

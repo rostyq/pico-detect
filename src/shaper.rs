@@ -7,7 +7,7 @@ use nalgebra::{Affine2, Dynamic, OMatrix, Point2, Vector2, U2};
 use super::bintest::FeatureBintest;
 use super::geometry::{find_affine, find_similarity};
 use super::node::ThresholdNode;
-use super::utils::get_pixel_with_fallback;
+use super::utils::get_pixel_i64;
 
 pub type ShapeMatrix = OMatrix<f32, U2, Dynamic>;
 
@@ -37,11 +37,7 @@ impl Forest {
         debug_assert_eq!(self.deltas.len(), self.anchors.len());
         debug_assert_eq!(features.len(), self.anchors.len());
 
-        let transform_to_shape =
-            find_similarity(
-                initial_shape,
-                shape,
-            );
+        let transform_to_shape = find_similarity(initial_shape, shape);
 
         for ((delta, anchor), feature) in self
             .deltas
@@ -52,9 +48,9 @@ impl Forest {
             let mut point = shape[*anchor] + transform_to_shape.transform_vector(delta);
             point = transform_to_image.transform_point(&point);
 
-            *feature =
-                get_pixel_with_fallback(image, point.x as i32, point.y as i32, Luma::from([0u8])).0
-                    [0];
+            *feature = get_pixel_i64(image, point.x as i64, point.y as i64)
+                .unwrap_or_else(|| Luma::from([0u8]))
+                .0[0];
         }
     }
 }
