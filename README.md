@@ -21,12 +21,12 @@ To run CLI example, which takes an image, finds all faces, detects some landmark
 > and put them under [`models/`](./models) directory.
 
 ```sh
-cargo run --release --example cli -- --input "tests/assets/Lenna_(test_image).png" --output result.png
+cargo run --release --example detect-faces -- --models-dir models -i "assets/test.png" --score 35.0 -o result.png
 ```
 
 Output image `result.png` should be like this:
 
-![visualization example](./tests/assets/Lenna_(result_image).png)
+![visualization example](./assets/result.png)
 
 ## Models
 
@@ -34,9 +34,9 @@ Each algorithm requires to be loaded with correspondent binary model.
 
 | model                     | algorithm   | source                             | Description               |
 |---------------------------|-------------|------------------------------------|---------------------------|
-| [facefinder]              | `Detector`  | [pico]                             | Human face classifier     |
-| [puploc]                  | `Localizer` | [puploc source]                    | Human eye pupil localizer |
-| [shaper_5_face_landmarks] | `Shaper`    | [shape_predictor_5_face_landmarks] | Human 5 face landmarks    |
+| [face.detector.bin]       | `Detector`  | [pico]                             | Human face classifier     |
+| [pupil.localizer.bin]     | `Localizer` | [puploc]                           | Human eye pupil localizer |
+| [face-5.shaper.bin]       | `Shaper`    | [shape_predictor_5_face_landmarks] | Human 5 face landmarks    |
 
 ## References
 
@@ -54,9 +54,9 @@ Each algorithm requires to be loaded with correspondent binary model.
 
 [pico]: https://github.com/nenadmarkus/pico
 
-[facefinder]: https://github.com/rostyslavb/pico-detect/raw/master/models/facefinder
-[puploc]: https://github.com/rostyslavb/pico-detect/raw/master/models/puploc.bin
-[shaper_5_face_landmarks]: https://github.com/rostyslavb/pico-detect/raw/master/models/shaper_5_face_landmarks.bin
+[face.detector.bin]: https://github.com/rostyq/pico-detect/raw/master/models/face.detector.bin
+[pupil.localizer.bin]: https://github.com/rostyq/pico-detect/raw/master/models/pupil.localizer.bin
+[face-5.shaper.bin]: https://github.com/rostyq/pico-detect/raw/master/models/face-5.shaper.bin
 
 [puploc source]: https://drone.nenadmarkus.com/data/blog-stuff/puploc.bin
 [shape_predictor_5_face_landmarks]: https://github.com/davisking/dlib-models#shape_predictor_5_face_landmarksdatbz2

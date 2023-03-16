@@ -1,20 +1,16 @@
 use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
-use nalgebra::{Point2, Similarity2, Translation2, Vector2};
+use nalgebra::{Point2, Translation2, Vector2};
 
-use rand::distributions::Uniform;
-use rand::{Rng, RngCore};
-
-use super::bintest::ImageBintest;
-use super::geometry::ISimilarity2;
-use super::node::ComparisonNode;
-use super::utils::odd_median_mut;
+use crate::nodes::ComparisonNode;
+use crate::utils::region::Region;
+use crate::utils::square::Square;
+use crate::utils::perturbator::{Perturbator, PerturbatorBuilder};
 
 type Tree = Vec<ComparisonNode>;
 type Predictions = Vec<Vector2<f32>>;
 type Stage = Vec<(Tree, Predictions)>;
-type Stages = Vec<Stage>;
 
 /// Implements object localization using decision trees.
 ///
@@ -23,8 +19,7 @@ pub struct Localizer {
     depth: usize,
     dsize: usize,
     scale: f32,
-    stages: Stages,
-    distrs: (Uniform<f32>, Uniform<f32>),
+    stages: Vec<Stage>,
 }
 
 impl Localizer {
@@ -33,90 +28,39 @@ impl Localizer {
     /// ### Arguments
     ///
     /// * `image` - Target image.
-    /// * `roi` -- similarity transform as region of interest:
-    ///   - `roi.isometry.translation` region center position on image,
-    ///   - TODO `roi.isometry.rotation` region rotation (have no effect),
-    ///   - `roi.scaling` region size.
-    pub fn localize<I>(&self, image: &I, mut roi: Similarity2<f32>) -> Point2<f32>
+    /// TODO
+    pub fn localize<I>(&self, image: &I, roi: Square) -> Point2<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
-        let scaling = roi.scaling();
+        let mut size = roi.size() as f32;
+        let (x, y) = roi.center();
+        let mut point: Point2<f32> = Point2::new(x, y).cast();
+
         for stage in self.stages.iter() {
             let mut translation = Translation2::identity();
-            let roi_i32 = ISimilarity2::from(roi);
+            let p = Point2::new(point.x as i64, point.y as i64);
+            let s = size as u32;
 
             for (codes, preds) in stage.iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    2 * idx + 1 + codes[idx].bintest(image, &roi_i32) as usize
+                    2 * idx + 1 + codes[idx].bintest(image, p, s) as usize
                 });
                 let lutidx = (idx + 1) - self.dsize;
 
                 translation.vector += preds[lutidx];
             }
 
-            translation.vector.scale_mut(scaling);
-            roi.append_translation_mut(&translation);
-
-            roi.prepend_scaling_mut(self.scale);
+            translation.vector.scale_mut(size);
+            *point = *translation.transform_point(&point);
+            size *= self.scale;
         }
 
-        Point2::from(roi.isometry.translation.vector)
+        point
     }
 
-    /// Estimate object location on the image with perturbation to increase accuracy.
-    ///
-    /// ### Arguments
-    ///
-    /// * `image` - Target image.
-    /// * `roi` -- similarity transform as region of interest:
-    ///   - `roi.isometry.translation` region center position on image,
-    ///   - `roi.isometry.rotation` region rotation (have no effect),
-    ///   - `roi.scaling` region size.
-    /// * `rng` - Source for randomness.
-    /// * `nperturbs` - How many perturbations to make.
-    pub fn perturb_localize<I>(
-        &self,
-        image: &I,
-        initial_roi: Similarity2<f32>,
-        mut rng: impl RngCore,
-        nperturbs: usize,
-    ) -> Point2<f32>
-    where
-        I: GenericImageView<Pixel = Luma<u8>>,
-    {
-        let mut xs: Vec<f32> = Vec::with_capacity(nperturbs);
-        let mut ys: Vec<f32> = Vec::with_capacity(nperturbs);
-        let scaling = initial_roi.scaling();
-
-        // println!("\ninit: {}", initial_roi);
-        for _ in 0..nperturbs {
-            let mut roi = initial_roi;
-
-            roi.prepend_scaling_mut(rng.sample(self.distrs.0));
-
-            roi.isometry.translation.vector.x = scaling.mul_add(
-                rng.sample(self.distrs.1),
-                initial_roi.isometry.translation.vector.x,
-            );
-
-            roi.isometry.translation.vector.y = scaling.mul_add(
-                rng.sample(self.distrs.1),
-                initial_roi.isometry.translation.vector.y,
-            );
-
-            // println!("rand: {}", roi);
-            let result = self.localize(image, roi);
-
-            xs.push(result.x);
-            ys.push(result.y);
-        }
-
-        Point2::new(odd_median_mut(&mut xs), odd_median_mut(&mut ys))
-    }
-
-    /// Create localizer from a readable source.
-    pub fn from_readable(mut readable: impl Read) -> Result<Self, Error> {
+    /// Load localizer from a readable source.
+    pub fn load(mut readable: impl Read) -> Result<Self, Error> {
         let mut buffer: [u8; 4] = [0u8; 4];
         readable.read_exact(&mut buffer)?;
         let nstages = i32::from_le_bytes(buffer) as usize;
@@ -135,7 +79,7 @@ impl Localizer {
         };
         let code_size = pred_size - 1;
 
-        let mut stages: Stages = Vec::with_capacity(nstages);
+        let mut stages = Vec::with_capacity(nstages);
 
         for _ in 0..nstages {
             let mut stage: Stage = Vec::with_capacity(ntrees);
@@ -171,8 +115,74 @@ impl Localizer {
             dsize: pred_size,
             scale,
             stages,
-            distrs: (Uniform::new(0.925, 0.94), Uniform::new(-0.075, 0.075)),
         })
+    }
+}
+
+pub struct PerturbatingLocalizer {
+    pub model: Localizer,
+    pub perturbator: Perturbator,
+    pub perturbs: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PerturbatingLocalizerBuilder {
+    pub perturbator_builder: PerturbatorBuilder,
+    pub perturbs: Option<usize>,
+}
+
+impl PerturbatingLocalizerBuilder {
+    pub fn with_perturbs(mut self, value: usize) -> Self {
+        self.perturbs = Some(value);
+        self
+    }
+
+    pub fn map_perturbator_builder<F: FnOnce(PerturbatorBuilder) -> PerturbatorBuilder>(mut self, f: F) -> Self {
+        self.perturbator_builder = f(self.perturbator_builder);
+        self
+    }
+
+    pub fn build(self, model: Localizer) -> Result<PerturbatingLocalizer, &'static str> {
+        if let Some(value) = self.perturbs {
+            if (value % 2) == 0 {
+                return Err("`nperturbs` should be odd");
+            }
+        }
+
+        Ok(PerturbatingLocalizer {
+            perturbs: self.perturbs.unwrap_or(15),
+            perturbator: self.perturbator_builder.build()?,
+            model,
+        })
+    }
+}
+
+impl PerturbatingLocalizer {
+    pub fn builder() -> PerturbatingLocalizerBuilder {
+        Default::default()
+    }
+
+    pub fn localize<I>(&mut self, image: &I, roi: Square) -> Point2<i64>
+    where
+        I: GenericImageView<Pixel = Luma<u8>>,
+    {
+        let mut xs: Vec<i64> = Vec::with_capacity(self.perturbs);
+        let mut ys: Vec<i64> = Vec::with_capacity(self.perturbs);
+
+        let model = &self.model;
+
+        self.perturbator.run(self.perturbs, roi, |s| {
+            let p = model.localize(image, s);
+            xs.push(p.x as i64);
+            ys.push(p.y as i64);
+        });
+
+        xs.sort();
+        ys.sort();
+
+        let index = (self.perturbs - 1) / 2;
+
+        Point2::new(xs[index], ys[index])
     }
 }
 
@@ -181,10 +191,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn check_pupil_localizer_model_parsing() {
-        let puploc =
-            Localizer::from_readable(include_bytes!("../models/puploc.bin").to_vec().as_slice())
-                .expect("parsing failed");
+    fn test_pupil_localizer_model_loading() {
+        let puploc = Localizer::load(include_bytes!("../models/pupil.localizer.bin").to_vec().as_slice())
+            .expect("parsing failed");
         let stages = &puploc.stages;
         let trees = stages[0].len();
 

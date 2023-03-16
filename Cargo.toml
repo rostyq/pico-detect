@@ -1,15 +1,16 @@
 [package]
 name = "pico-detect"
-version = "0.4.1"
+version = "0.5.0"
 authors = ["Rostyslav Bohomaz <rostyslav.db@gmail.com>"]
 edition = "2018"
 keywords = ["pico", "detection", "localization", "prediction"]
 categories = ["computer-vision", "wasm"]
 license = "MIT"
 description = "Pixel Intensity Comparison-based Object (PICO) detection library."
-repository = "https://github.com/rostyslavb/pico-detect"
+repository = "https://github.com/rostyq/pico-detect"
 readme = "README.md"
 exclude = [
+  "assets",
   "tests",
   "models",
   "examples",
@@ -21,27 +22,51 @@ name = "pico_detect"
 bench = false
 
 [dependencies]
-derive-new = "0.5.9"
-nalgebra = "0.29.0"
-image = { version = "0.23.14", default-features = false }
-imageproc = { version = "0.22.0", default-features = false }
-rand = "0.8.4"
+nalgebra = { version = "0.32.1", default-features = false, features = [ "std" ] }
+image = { version = "0.24.5", default-features = false }
+imageproc = { version = "0.23.0", default-features = false }
+rand = "0.8.5"
+similarity-least-squares = "0.2.0"
+rand_xorshift = "0.3.0"
 
 [dev-dependencies]
-image = "0.23.14"
-imageproc = "0.22.0"
-criterion = "0.3.5"
-structopt = "0.3.23"
+image = "0.24.5"
+imageproc = "0.23.0"
+criterion = "0.4.0"
 approx = "0.5.0"
-rand_xorshift = "0.3.0"
+clap = { version = "4.1.8", features = ["derive"] }
+anyhow = "1.0"
 
 [dev-dependencies.cargo-husky]
 version = "1.5.0"
 features = ["precommit-hook", "run-cargo-clippy"]
 
 [[bench]]
-name = "benchmarks"
+name = "detector_bench"
 harness = false
+
+[[bench]]
+name = "multiscaler_bench"
+harness = false
+
+[[bench]]
+name = "perturbator_bench"
+harness = false
+
+[[bench]]
+name = "clusterizer_bench"
+harness = false
+
+[[bench]]
+name = "localizer_bench"
+harness = false
+
+[[bench]]
+name = "shaper_bench"
+harness = false
+
+[[example]]
+name = "detect-faces"
 
 # uncomment for debugging
 # [profile.release]

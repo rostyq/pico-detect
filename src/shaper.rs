@@ -2,71 +2,68 @@ use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 use imageproc::rect::Rect;
-use nalgebra::{Affine2, Dynamic, OMatrix, Point2, Vector2, U2};
+use nalgebra::allocator::Allocator;
+use nalgebra::{
+    Affine2, DefaultAllocator, Dim, DimName, Dyn, Matrix3, OMatrix, Point2, SimilarityMatrix2,
+    UninitMatrix, Vector2, U2,
+};
 
-use super::bintest::FeatureBintest;
-use super::geometry::{find_affine, find_similarity};
-use super::node::ThresholdNode;
-use super::utils::get_pixel_i64;
-
-pub type ShapeMatrix = OMatrix<f32, U2, Dynamic>;
+use crate::nodes::ThresholdNode;
+use crate::utils::img::get_luma_by_point_f32;
 
 struct Tree {
     nodes: Vec<ThresholdNode>,
     shifts: Vec<Vec<Vector2<f32>>>,
 }
 
-struct Forest {
-    trees: Vec<Tree>,
-    anchors: Vec<usize>,
-    deltas: Vec<Vector2<f32>>,
+struct Delta {
+    anchor: usize,
+    value: Vector2<f32>,
 }
 
-impl Forest {
-    #[inline]
-    fn extract_feature_pixel_values<I>(
-        &self,
-        image: &I,
-        transform_to_image: &Affine2<f32>,
-        initial_shape: &[Point2<f32>],
-        shape: &[Point2<f32>],
-        features: &mut [u8],
-    ) where
-        I: GenericImageView<Pixel = Luma<u8>>,
-    {
-        debug_assert_eq!(self.deltas.len(), self.anchors.len());
-        debug_assert_eq!(features.len(), self.anchors.len());
+struct Forest {
+    trees: Vec<Tree>,
+    deltas: Vec<Delta>,
+}
 
-        let transform_to_shape = find_similarity(initial_shape, shape);
+#[inline]
+fn extract_features<I>(
+    deltas: &[Delta],
+    image: &I,
+    transform_to_shape: &SimilarityMatrix2<f32>,
+    transform_to_image: &Affine2<f32>,
+    shape: &[Point2<f32>],
+) -> Vec<u8>
+where
+    I: GenericImageView<Pixel = Luma<u8>>,
+{
+    deltas
+        .iter()
+        .map(|delta| {
+            let point = unsafe { shape.get_unchecked(delta.anchor) };
+            let point = point + transform_to_shape.transform_vector(&delta.value);
+            let point = transform_to_image * point;
 
-        for ((delta, anchor), feature) in self
-            .deltas
-            .iter()
-            .zip(self.anchors.iter())
-            .zip(features.iter_mut())
-        {
-            let mut point = shape[*anchor] + transform_to_shape.transform_vector(delta);
-            point = transform_to_image.transform_point(&point);
-
-            *feature = get_pixel_i64(image, point.x as i64, point.y as i64)
-                .unwrap_or_else(|| Luma::from([0u8]))
-                .0[0];
-        }
-    }
+            get_luma_by_point_f32(image, point).unwrap_or(0u8)
+        })
+        .collect()
 }
 
 /// Implements object alignment using an ensemble of regression trees.
 pub struct Shaper {
-    initial_shape: Vec<Point2<f32>>,
-    forests: Vec<Forest>,
     depth: usize,
     dsize: usize,
-    features: Vec<u8>,
+    shape: Vec<Point2<f32>>,
+    forests: Vec<Forest>,
 }
 
 impl Shaper {
+    pub fn size(&self) -> usize {
+        self.shape.len()
+    }
+
     /// Create a shaper object from a readable source.
-    pub fn from_readable(mut readable: impl Read) -> Result<Self, Error> {
+    pub fn load(mut readable: impl Read) -> Result<Self, Error> {
         let mut buf = [0u8; 4];
         readable.read_exact(&mut buf[0..1])?;
         let version = buf[0];
@@ -80,7 +77,7 @@ impl Shaper {
         readable.read_exact(&mut buf)?;
         let ncols = u32::from_be_bytes(buf) as usize;
 
-        let size = nrows * ncols;
+        let size = nrows * ncols / U2::USIZE;
 
         readable.read_exact(&mut buf)?;
         let nforests = u32::from_be_bytes(buf) as usize;
@@ -98,7 +95,7 @@ impl Shaper {
         let splits_count = leafs_count - 1;
 
         // dbg!(nrows, ncols, nforests, forest_size, tree_depth, nfeatures);
-        let initial_shape: Vec<Point2<f32>> = shape_from_readable(readable.by_ref(), size)?
+        let shape: Vec<Point2<f32>> = read_shape(readable.by_ref(), size)?
             .column_iter()
             .map(|col| Point2::new(col.x, col.y))
             .collect();
@@ -116,7 +113,7 @@ impl Shaper {
 
                 let mut shifts = Vec::with_capacity(leafs_count);
                 for _ in 0..leafs_count {
-                    let shift: Vec<Vector2<f32>> = shape_from_readable(readable.by_ref(), size)?
+                    let shift: Vec<Vector2<f32>> = read_shape(readable.by_ref(), size)?
                         .column_iter()
                         .map(|col| Vector2::new(col.x, col.y))
                         .collect();
@@ -133,27 +130,27 @@ impl Shaper {
             }
 
             let mut deltas = Vec::with_capacity(nfeatures);
-            for _ in 0..nfeatures {
+            for anchor in anchors.into_iter() {
                 readable.read_exact(&mut buf)?;
                 let x = f32::from_be_bytes(buf);
+
                 readable.read_exact(&mut buf)?;
                 let y = f32::from_be_bytes(buf);
-                deltas.push(Vector2::new(x, y));
+
+                deltas.push(Delta {
+                    anchor,
+                    value: Vector2::new(x, y),
+                });
             }
 
-            forests.push(Forest {
-                trees,
-                anchors,
-                deltas,
-            });
+            forests.push(Forest { trees, deltas });
         }
 
         Ok(Self {
-            initial_shape,
-            forests,
             depth: tree_depth as usize,
             dsize: splits_count,
-            features: vec![0u8; nfeatures],
+            shape,
+            forests,
         })
     }
 
@@ -162,36 +159,41 @@ impl Shaper {
     /// ### Arguments
     ///
     /// * `image` - Target image.
-    /// * `roi` - object location:
-    ///   - `roi.x` position on image x-axis,
-    ///   - `roi.y` position on image y-axis,
-    ///   - `roi.z` object size.
+    /// TODO:
     ///
     /// ### Returns
     ///
     /// A collection of points each one corresponds to landmark location.
     /// Points count is defined by a loaded shaper model.
     #[inline]
-    pub fn predict<I>(&mut self, image: &I, rect: Rect) -> Vec<Point2<f32>>
+    pub fn shape<I>(&self, image: &I, rect: Rect) -> Vec<Point2<f32>>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
-        let mut shape = self.initial_shape.clone();
+        let mut shape = self.shape.clone();
 
         let transform_to_image = find_transform_to_image(rect);
 
         for forest in self.forests.iter() {
-            forest.extract_feature_pixel_values(
+            let transform_to_shape = similarity_least_squares::from_point_slices(
+                self.shape.as_slice(),
+                shape.as_slice(),
+                f32::EPSILON,
+                0,
+            )
+            .expect("Similarity least squares failed");
+
+            let features = extract_features(
+                &forest.deltas,
                 image,
+                &transform_to_shape,
                 &transform_to_image,
-                &self.initial_shape,
                 &shape,
-                self.features.as_mut(),
             );
 
             for tree in forest.trees.iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    2 * idx + 1 + tree.nodes[idx].bintest(&self.features) as usize
+                    2 * idx + 1 + tree.nodes[idx].bintest(features.as_slice()) as usize
                 }) - self.dsize;
 
                 shape.iter_mut().zip(tree.shifts[idx].iter()).for_each(
@@ -204,41 +206,38 @@ impl Shaper {
 
         shape
             .iter_mut()
-            .for_each(|point| *point = transform_to_image.transform_point(point));
+            .for_each(|point| *point = transform_to_image * *point);
         shape
     }
 }
 
 #[inline]
 fn find_transform_to_image(rect: Rect) -> Affine2<f32> {
-    let norm_corners = [
-        Point2::new(0.0, 0.0),
-        Point2::new(1.0, 0.0),
-        Point2::new(1.0, 1.0),
-    ];
-    let (left, right, top, bottom) = (
+    Affine2::from_matrix_unchecked(Matrix3::new(
+        rect.width() as f32,
+        0.0,
         rect.left() as f32,
-        rect.right() as f32,
+        0.0,
+        rect.height() as f32,
         rect.top() as f32,
-        rect.bottom() as f32,
-    );
-
-    let rect_corners = [
-        Point2::new(left, top),
-        Point2::new(right, top),
-        Point2::new(right, bottom),
-    ];
-    find_affine(&norm_corners, &rect_corners, 0.0001).unwrap()
+        0.0,
+        0.0,
+        1.0,
+    ))
 }
 
-fn shape_from_readable(mut readable: impl Read, size: usize) -> Result<ShapeMatrix, Error> {
-    let mut arr = Vec::with_capacity(size);
+fn read_shape(mut readable: impl Read, size: usize) -> Result<OMatrix<f32, U2, Dyn>, Error>
+where
+    DefaultAllocator: Allocator<f32, U2, Dyn>,
+{
+    let mut m = UninitMatrix::<f32, U2, Dyn>::uninit(U2, Dyn::from_usize(size));
+
     let mut buf = [0u8; 4];
-    for _ in 0..size {
+    for value in m.iter_mut() {
         readable.read_exact(&mut buf)?;
-        arr.push(f32::from_be_bytes(buf));
+        value.write(f32::from_be_bytes(buf));
     }
-    Ok(ShapeMatrix::from_vec(arr))
+    Ok(unsafe { m.assume_init() })
 }
 
 #[cfg(test)]
@@ -246,9 +245,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn check_face_landmarks_model_parsing() {
-        let shaper = Shaper::from_readable(
-            include_bytes!("../models/shaper_5_face_landmarks.bin")
+    fn test_face_landmarks_model_loading() {
+        let shaper = Shaper::load(
+            include_bytes!("../models/face-5.shaper.bin")
                 .to_vec()
                 .as_slice(),
         )
@@ -260,7 +259,6 @@ mod tests {
         assert_eq!(shaper.forests[0].trees[0].nodes.len(), 15);
         assert_eq!(shaper.forests[0].trees[0].shifts.len(), 16);
 
-        assert_eq!(shaper.forests[0].anchors.len(), 800);
         assert_eq!(shaper.forests[0].deltas.len(), 800);
     }
 }
