@@ -58,5 +58,5 @@ Each algorithm requires to be loaded with correspondent binary model.
 [pupil.localizer.bin]: https://github.com/rostyq/pico-detect/raw/master/models/pupil.localizer.bin
 [face-5.shaper.bin]: https://github.com/rostyq/pico-detect/raw/master/models/face-5.shaper.bin
 
-[puploc source]: https://drone.nenadmarkus.com/data/blog-stuff/puploc.bin
+[puploc]: https://drone.nenadmarkus.com/data/blog-stuff/puploc.bin
 [shape_predictor_5_face_landmarks]: https://github.com/davisking/dlib-models#shape_predictor_5_face_landmarksdatbz2
