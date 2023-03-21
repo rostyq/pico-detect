@@ -1,27 +1,23 @@
-use image::{RgbImage, Rgb};
+use image::{Rgb, RgbImage};
 use imageproc::drawing;
+use rusttype::{Font, Scale};
 
 use crate::face::Face;
 
-pub fn draw_face(image: &mut RgbImage, face: &Face) {
+pub fn draw_face(image: &mut RgbImage, face: &Face, font: &Font, scale: Scale) {
     drawing::draw_hollow_rect_mut(image, face.region.into(), Rgb([0, 0, 255]));
 
-    for (_i, point) in face.shape.iter().enumerate() {
-        drawing::draw_cross_mut(image, Rgb([0, 255, 0]), point.x as i32, point.y as i32);
+    let color = Rgb([0, 255, 0]);
+    for (i, point) in face.shape.iter().enumerate() {
+        let x = point.x as i32;
+        let y = point.y as i32;
+        drawing::draw_cross_mut(image, color, x, y);
+        drawing::draw_text_mut(image, color, x + 1, y + 1, scale, font, &format!("{}", i));
     }
 
-    drawing::draw_cross_mut(
-        image,
-        Rgb([255, 0, 0]),
-        face.pupils.0.x as i32,
-        face.pupils.0.y as i32,
-    );
-    drawing::draw_cross_mut(
-        image,
-        Rgb([255, 0, 0]),
-        face.pupils.1.x as i32,
-        face.pupils.1.y as i32,
-    );
+    let color = Rgb([255, 0, 0]);
+    drawing::draw_cross_mut(image, color, face.pupils.0.x as i32, face.pupils.0.y as i32);
+    drawing::draw_cross_mut(image, color, face.pupils.1.x as i32, face.pupils.1.y as i32);
 }
 
 pub fn print_faces_data(faces: &[Face]) {
