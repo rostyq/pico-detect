@@ -60,14 +60,14 @@ fn main() -> Result<()> {
         ModelType::Localizer => {
             let localizer = Localizer::load(file)?;
             let point = localizer.localize(&image, square);
-            println!("{},{}", point.x, point.y);
+            println!("{},{}", point.x as i64, point.y as i64);
         }
         ModelType::Shaper => {
             let shaper = Shaper::load(file)?;
             let shape = shaper.shape(&image, square.into());
-            println!("x,y");
-            for point in shape.iter() {
-                println!("{},{}", point.x, point.y);
+            println!("i,x,y");
+            for (i, point) in shape.iter().enumerate() {
+                println!("{},{},{}", i, point.x as i64, point.y as i64);
             }
         }
     }
