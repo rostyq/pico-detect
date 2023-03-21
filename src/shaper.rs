@@ -62,6 +62,10 @@ impl Shaper {
         self.shape.len()
     }
 
+    pub fn init_points(&self) -> &[Point2<f32>] {
+        self.shape.as_ref()
+    }
+
     /// Create a shaper object from a readable source.
     pub fn load(mut readable: impl Read) -> Result<Self, Error> {
         let mut buf = [0u8; 4];
