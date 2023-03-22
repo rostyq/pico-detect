@@ -20,7 +20,7 @@ fn bench_localizer_localize(c: &mut Criterion) {
     let image = load_test_image!();
     let localizer = load_model!(puploc);
 
-    let s = Square::new(310, 247, 38);
+    let s = Square::new(310, 247, 38).into();
 
     c.bench_function("Localizer::localize", |b| {
         b.iter(|| localizer.localize(black_box(&image), black_box(s)));

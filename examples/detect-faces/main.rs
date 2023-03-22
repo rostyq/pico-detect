@@ -34,8 +34,8 @@ fn main() -> Result<()> {
             let shape = shaper.shape(&gray, roi.into());
 
             let (left_eye_roi, right_eye_roi) = Shape5::find_eyes_roi(&shape);
-            let left_pupil = localizer.localize(&gray, left_eye_roi);
-            let right_pupil = localizer.localize(&gray, right_eye_roi);
+            let left_pupil = localizer.localize(&gray, left_eye_roi.into());
+            let right_pupil = localizer.localize(&gray, right_eye_roi.into());
 
             Face {
                 region: roi.into(),

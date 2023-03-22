@@ -10,6 +10,7 @@ pub mod clusterizer;
 pub mod perturbator;
 
 pub use square::Square;
+pub use target::Target;
 pub use region::Region;
 pub use padding::Padding;
 pub use detection::Detection;

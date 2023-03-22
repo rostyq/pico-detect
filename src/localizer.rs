@@ -1,12 +1,12 @@
+use std::cmp::Ordering;
 use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 use nalgebra::{Point2, Translation2, Vector2};
 
 use crate::nodes::ComparisonNode;
-use crate::utils::region::Region;
-use crate::utils::square::Square;
 use crate::utils::perturbator::{Perturbator, PerturbatorBuilder};
+use crate::utils::target::Target;
 
 type Tree = Vec<ComparisonNode>;
 type Predictions = Vec<Vector2<f32>>;
@@ -29,13 +29,14 @@ impl Localizer {
     ///
     /// * `image` - Target image.
     /// TODO
-    pub fn localize<I>(&self, image: &I, roi: Square) -> Point2<f32>
+    pub fn localize<I>(&self, image: &I, roi: Target) -> Point2<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
-        let mut size = roi.size() as f32;
-        let (x, y) = roi.center();
-        let mut point: Point2<f32> = Point2::new(x, y).cast();
+        let Target {
+            mut point,
+            mut size,
+        } = roi;
 
         for stage in self.stages.iter() {
             let mut translation = Translation2::identity();
@@ -137,7 +138,10 @@ impl PerturbatingLocalizerBuilder {
         self
     }
 
-    pub fn map_perturbator_builder<F: FnOnce(PerturbatorBuilder) -> PerturbatorBuilder>(mut self, f: F) -> Self {
+    pub fn map_perturbator_builder<F: FnOnce(PerturbatorBuilder) -> PerturbatorBuilder>(
+        mut self,
+        f: F,
+    ) -> Self {
         self.perturbator_builder = f(self.perturbator_builder);
         self
     }
@@ -162,23 +166,27 @@ impl PerturbatingLocalizer {
         Default::default()
     }
 
-    pub fn localize<I>(&mut self, image: &I, roi: Square) -> Point2<i64>
+    pub fn localize<I>(&mut self, image: &I, roi: Target) -> Point2<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
-        let mut xs: Vec<i64> = Vec::with_capacity(self.perturbs);
-        let mut ys: Vec<i64> = Vec::with_capacity(self.perturbs);
+        let mut xs: Vec<f32> = Vec::with_capacity(self.perturbs);
+        let mut ys: Vec<f32> = Vec::with_capacity(self.perturbs);
 
         let model = &self.model;
 
         self.perturbator.run(self.perturbs, roi, |s| {
             let p = model.localize(image, s);
-            xs.push(p.x as i64);
-            ys.push(p.y as i64);
+            xs.push(p.x);
+            ys.push(p.y);
         });
 
-        xs.sort();
-        ys.sort();
+        #[inline]
+        fn compare(a: &f32, b: &f32) -> Ordering {
+            a.partial_cmp(b).unwrap()
+        }
+        xs.sort_by(compare);
+        ys.sort_by(compare);
 
         let index = (self.perturbs - 1) / 2;
 
@@ -192,8 +200,12 @@ mod tests {
 
     #[test]
     fn test_pupil_localizer_model_loading() {
-        let puploc = Localizer::load(include_bytes!("../models/pupil.localizer.bin").to_vec().as_slice())
-            .expect("parsing failed");
+        let puploc = Localizer::load(
+            include_bytes!("../models/pupil.localizer.bin")
+                .to_vec()
+                .as_slice(),
+        )
+        .expect("parsing failed");
         let stages = &puploc.stages;
         let trees = stages[0].len();
 

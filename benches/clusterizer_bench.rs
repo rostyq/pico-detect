@@ -11,7 +11,7 @@ use pico_detect::utils::{Clusterizer, Detection, Perturbator, Square};
 
 fn bench_clusterizer_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("Clusterizer::clusterize");
-    let init = Square::new(100, 100, 100);
+    let init = Square::new(100, 100, 100).into();
 
     for n in [10, 20, 30, 40, 50].iter() {
         let id = BenchmarkId::from_parameter(n);
@@ -28,7 +28,7 @@ fn bench_clusterizer_run(c: &mut Criterion) {
 
             perturbator.run(*n, init, |s| {
                 let score = rng.sample(OpenClosed01);
-                clusterizer.push(black_box(Detection::new(s, score)));
+                clusterizer.push(black_box(Detection::new(s.into(), score)));
             });
 
             b.iter(|| clusterizer.clusterize());

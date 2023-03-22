@@ -2,8 +2,7 @@ use rand::distributions::Uniform;
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
 
-use crate::utils::square::Square;
-use crate::utils::region::Region;
+use super::target::Target;
 
 #[derive(Clone, Debug)]
 pub struct Perturbator {
@@ -61,21 +60,19 @@ impl Perturbator {
     }
 
     #[inline]
-    pub fn run<F>(&mut self, n: usize, init: Square, mut f: F)
+    pub fn run<F>(&mut self, n: usize, init: Target, mut f: F)
     where
-        F: FnMut(Square),
+        F: FnMut(Target),
     {
-        let s = init.size() as f32;
-        let left = init.left() as f32;
-        let top = init.top() as f32;
+        let size = init.size();
 
         for _ in 0..n {
-            let size = (s * self.rng.sample(self.sdist)) as u32;
+            let s = size * self.rng.sample(self.sdist);
 
-            let left = s.mul_add(self.rng.sample(self.tdist), left) as i64;
-            let top = s.mul_add(self.rng.sample(self.tdist), top) as i64;
+            let x = s.mul_add(self.rng.sample(self.tdist), init.x());
+            let y = s.mul_add(self.rng.sample(self.tdist), init.y());
 
-            f(Square::new(left, top, size));
+            f(Target::new(x, y, s));
         }
     }
 }

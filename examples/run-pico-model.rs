@@ -59,7 +59,7 @@ fn main() -> Result<()> {
         }
         ModelType::Localizer => {
             let localizer = Localizer::load(file)?;
-            let point = localizer.localize(&image, square);
+            let point = localizer.localize(&image, square.into());
             println!("{},{}", point.x as i64, point.y as i64);
         }
         ModelType::Shaper => {
