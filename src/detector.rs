@@ -7,6 +7,7 @@ use crate::nodes::ComparisonNode;
 use crate::utils::region::Region;
 use crate::utils::square::Square;
 use crate::utils::detection::Detection;
+use crate::utils::target::Target;
 use crate::utils::clusterizer::{Clusterizer, ClusterizerBuilder};
 use crate::utils::multiscaler::{Multiscaler, MultiscalerBuilder};
 
@@ -180,21 +181,12 @@ impl MultiscaleDetector {
     }
 
     #[inline]
-    pub fn detect<I>(&mut self, image: &I) -> Vec<Detection<Square>>
+    pub fn detect<I>(&mut self, image: &I) -> Vec<Detection<Target>>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
         self.gather_detections(image);
         self.clusterizer.clusterize()
-    }
-
-    #[inline]
-    pub fn detect_mut<I>(&mut self, image: &I, output: &mut Vec<Detection<Square>>)
-    where
-        I: GenericImageView<Pixel = Luma<u8>>,
-    {
-        self.gather_detections(image);
-        self.clusterizer.clusterize_mut(output);
     }
 }
 

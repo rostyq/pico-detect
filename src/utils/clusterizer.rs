@@ -1,7 +1,7 @@
-
 use super::detection::Detection;
 use super::region::Region;
 use super::square::Square;
+use super::target::Target;
 use super::iou::intersection_over_union;
 
 pub struct Clusterizer {
@@ -74,11 +74,12 @@ impl Clusterizer {
     }
 
     #[inline]
-    pub fn clusterize_mut(&mut self, output: &mut Vec<Detection<Square>>) -> usize {
+    pub fn clusterize(&mut self) -> Vec<Detection<Target>> {
+        let mut output = Vec::with_capacity(self.buffer.len());
+
         self.buffer
             .sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
         let mut assignments = vec![false; self.buffer.len()];
-        let mut clusters: usize = 0;
 
         for (i, det1) in self.buffer.iter().enumerate() {
             if assignments[i] {
@@ -116,28 +117,27 @@ impl Clusterizer {
             if score < self.score_threshold {
                 continue;
             }
+            let x: f32;
+            let y: f32;
+            let s: f32;
 
             if count > 1 {
                 let count = count as f32;
+                s = size as f32 / count;
+                let h = s / 2.0;
 
-                left = (left as f32 / count) as i64;
-                top = (top as f32 / count) as i64;
+                x = (left as f32 / count) + h;
+                y = (top as f32 / count) + h;
+            } else {
+                s = size as f32;
+                let h = s / 2.0;
 
-                size = (size as f32 / count) as u32;
+                x = left as f32 + h;
+                y = top as f32 + h;
             }
 
-            let region = Square::new(left, top, size);
-            output.push(Detection::new(region, score));
-            clusters += 1;
+            output.push(Target::new(x, y, s).detection(score));
         }
-        clusters
-    }
-
-    /// Same as `clusterize_mut` but creates new cluster storage.
-    #[inline]
-    pub fn clusterize(&mut self) -> Vec<Detection<Square>> {
-        let mut output = Vec::with_capacity(self.buffer.len());
-        self.clusterize_mut(&mut output);
         output
     }
 }

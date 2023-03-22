@@ -4,6 +4,7 @@ pub mod img;
 pub mod iou;
 pub mod detection;
 pub mod padding;
+pub mod target;
 pub mod multiscaler;
 pub mod clusterizer;
 pub mod perturbator;

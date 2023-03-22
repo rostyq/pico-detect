@@ -38,7 +38,7 @@ fn main() -> Result<()> {
             let right_pupil = localizer.localize(&gray, right_eye_roi);
 
             Face {
-                region: roi,
+                region: roi.into(),
                 shape,
                 score: d.score(),
                 pupils: (left_pupil, right_pupil),
