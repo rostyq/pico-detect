@@ -11,14 +11,14 @@ pub struct Target {
 }
 
 impl Target {
-    pub(crate) fn new(x: f32, y: f32, s: f32) -> Self {
+    pub fn new(x: f32, y: f32, s: f32) -> Self {
         Self {
             point: Point2::new(x, y),
             size: s
         }
     }
 
-    pub(crate) fn detection(self, score: f32) -> Detection<Self> {
+    pub fn detection(self, score: f32) -> Detection<Self> {
         Detection { region: self, score }
     }
 
