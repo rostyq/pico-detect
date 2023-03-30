@@ -12,11 +12,11 @@ pub struct Multiscaler {
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct MultiscalerBuilder {
-    min_size: Option<u32>,
-    max_size: Option<u32>,
-    shift_factor: Option<f32>,
-    scale_factor: Option<f32>,
-    padding: PaddingBuilder,
+    pub min_size: Option<u32>,
+    pub max_size: Option<u32>,
+    pub shift_factor: Option<f32>,
+    pub scale_factor: Option<f32>,
+    pub padding: PaddingBuilder,
 }
 
 impl MultiscalerBuilder {
