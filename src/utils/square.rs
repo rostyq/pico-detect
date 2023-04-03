@@ -1,5 +1,5 @@
-use imageproc::rect::Rect;
 use super::region::Region;
+use imageproc::rect::Rect;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Square {
@@ -9,6 +9,7 @@ pub struct Square {
 }
 
 impl Square {
+    #[inline]
     pub fn at(x: i64, y: i64) -> Self {
         Self {
             left: x,
@@ -17,11 +18,13 @@ impl Square {
         }
     }
 
+    #[inline]
     pub fn of_size(mut self, value: u32) -> Self {
         self.size = value;
         self
     }
 
+    #[inline]
     pub fn from_region<T: Region>(value: T) -> Result<Self, &'static str> {
         if value.is_square() {
             Ok(Self {
@@ -34,32 +37,39 @@ impl Square {
         }
     }
 
+    #[inline]
     pub fn new(left: i64, top: i64, size: u32) -> Self {
         Self { left, top, size }
     }
 
+    #[inline]
     pub fn size(&self) -> u32 {
         self.size
     }
 }
 
 impl Region for Square {
+    #[inline]
     fn left(&self) -> i64 {
         self.left
     }
 
+    #[inline]
     fn top(&self) -> i64 {
         self.top
     }
 
+    #[inline]
     fn width(&self) -> u32 {
         self.size
     }
 
+    #[inline]
     fn height(&self) -> u32 {
         self.size
     }
 
+    #[inline]
     fn is_square(&self) -> bool {
         true
     }

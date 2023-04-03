@@ -8,6 +8,7 @@ pub struct Detection<R: Region> {
 }
 
 impl<R: Region> Detection<R> {
+    #[inline]
     pub fn new(region: R, score: f32) -> Self {
         assert!(score > 0.0);
         Self { region, score }
@@ -27,6 +28,7 @@ impl<R: Region> Detection<R> {
 }
 
 impl<R: Region> AsRef<R> for Detection<R> {
+    #[inline]
     fn as_ref(&self) -> &R {
         &self.region
     }

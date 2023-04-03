@@ -19,21 +19,25 @@ pub struct PerturbatorBuilder {
 }
 
 impl PerturbatorBuilder {
+    #[inline]
     pub fn with_seed(mut self, value: u64) -> Self {
         self.seed = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_scale_range(mut self, low: f32, high: f32) -> Self {
         self.srange = Some((low, high));
         self
     }
 
+    #[inline]
     pub fn with_translation_range(mut self, low: f32, high: f32) -> Self {
         self.trange = Some((low, high));
         self
     }
 
+    #[inline]
     pub fn build(self) -> Result<Perturbator, &'static str> {
         let (slow, shigh) = self.srange.unwrap_or((0.925, 0.94));
         let (tlow, thigh) = self.trange.unwrap_or((-0.075, 0.075));
@@ -55,6 +59,7 @@ impl PerturbatorBuilder {
 }
 
 impl Perturbator {
+    #[inline]
     pub fn builder() -> PerturbatorBuilder {
         Default::default()
     }

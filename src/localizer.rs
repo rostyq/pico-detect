@@ -29,6 +29,7 @@ impl Localizer {
     ///
     /// * `image` - Target image.
     /// TODO
+    #[inline]
     pub fn localize<I>(&self, image: &I, roi: Target) -> Point2<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
@@ -61,6 +62,7 @@ impl Localizer {
     }
 
     /// Load localizer from a readable source.
+    #[inline]
     pub fn load(mut readable: impl Read) -> Result<Self, Error> {
         let mut buffer: [u8; 4] = [0u8; 4];
         readable.read_exact(&mut buffer)?;
@@ -133,11 +135,13 @@ pub struct PerturbatingLocalizerBuilder {
 }
 
 impl PerturbatingLocalizerBuilder {
+    #[inline]
     pub fn with_perturbs(mut self, value: usize) -> Self {
         self.perturbs = Some(value);
         self
     }
 
+    #[inline]
     pub fn map_perturbator_builder<F: FnOnce(PerturbatorBuilder) -> PerturbatorBuilder>(
         mut self,
         f: F,
@@ -146,6 +150,7 @@ impl PerturbatingLocalizerBuilder {
         self
     }
 
+    #[inline]
     pub fn build(self, model: Localizer) -> Result<PerturbatingLocalizer, &'static str> {
         if let Some(value) = self.perturbs {
             if (value % 2) == 0 {
@@ -162,10 +167,12 @@ impl PerturbatingLocalizerBuilder {
 }
 
 impl PerturbatingLocalizer {
+    #[inline]
     pub fn builder() -> PerturbatingLocalizerBuilder {
         Default::default()
     }
 
+    #[inline]
     pub fn localize<I>(&mut self, image: &I, roi: Target) -> Point2<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,

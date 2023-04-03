@@ -20,6 +20,7 @@ pub struct MultiscalerBuilder {
 }
 
 impl MultiscalerBuilder {
+    #[inline]
     pub fn build(self) -> Result<Multiscaler, &'static str> {
         let min_size = self.min_size.ok_or("min_size is not set")?;
         let max_size = self.max_size.ok_or("max_size is not set")?;
@@ -64,22 +65,26 @@ impl MultiscalerBuilder {
         })
     }
 
+    #[inline]
     pub fn with_min_size(mut self, value: u32) -> Self {
         self.min_size = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_max_size(mut self, value: u32) -> Self {
         self.max_size = Some(value);
         self
     }
 
     /// MultiScale with padded sliding window area.
+    #[inline]
     pub fn with_padding(mut self, padding: PaddingBuilder) -> Self {
         self.padding = padding;
         self
     }
 
+    #[inline]
     pub fn map_padding<F: FnOnce(PaddingBuilder) -> PaddingBuilder>(self, f: F) -> Self {
         self.with_padding(f(self.padding))
     }
@@ -87,6 +92,7 @@ impl MultiscalerBuilder {
     /// MultiScale with shift factor.
     ///
     /// Means how far to move a sliding window by fraction of its size: (0..1).
+    #[inline]
     pub fn with_shift_factor(mut self, value: f32) -> Self {
         self.shift_factor = Some(value);
         self
@@ -96,6 +102,7 @@ impl MultiscalerBuilder {
     ///
     /// For multiscale processing: resize the detection window by fraction
     /// of its size when moving to the higher scale. Must be greater that 1.0.
+    #[inline]
     pub fn with_scale_factor(mut self, value: f32) -> Self {
         self.scale_factor = Some(value);
         self
