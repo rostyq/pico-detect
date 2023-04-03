@@ -53,3 +53,6 @@ name = "detect-faces"
 # uncomment for debugging
 # [profile.release]
 # debug = true
+
+[profile.bench]
+lto = true
