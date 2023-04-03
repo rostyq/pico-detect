@@ -43,28 +43,9 @@ version = "1.5.0"
 features = ["precommit-hook", "run-cargo-clippy"]
 
 [[bench]]
-name = "detector_bench"
+name = "pico_detect_bench"
 harness = false
-
-[[bench]]
-name = "multiscaler_bench"
-harness = false
-
-[[bench]]
-name = "perturbator_bench"
-harness = false
-
-[[bench]]
-name = "clusterizer_bench"
-harness = false
-
-[[bench]]
-name = "localizer_bench"
-harness = false
-
-[[bench]]
-name = "shaper_bench"
-harness = false
+path = "benches/lib.rs"
 
 [[example]]
 name = "detect-faces"
