@@ -1,9 +1,9 @@
-#[macro_use]
-mod common;
+#[path = "./common/macros.rs"]
+mod macros;
 
 use std::fs;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, Criterion};
 
 use image;
 use pico_detect::{Detector, utils::Square};
@@ -28,4 +28,3 @@ fn bench_detector_detect(c: &mut Criterion) {
 }
 
 criterion_group!(benches, bench_detector_load, bench_detector_detect);
-criterion_main!(benches);

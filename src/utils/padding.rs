@@ -9,6 +9,7 @@ pub struct Padding {
 }
 
 impl Padding {
+    #[inline]
     pub fn new(top: i32, right: i32, bottom: i32, left: i32) -> Self {
         Self {
             top,
@@ -35,6 +36,7 @@ pub struct PaddingBuilder {
 }
 
 impl PaddingBuilder {
+    #[inline]
     pub fn with_all(mut self, value: i32) -> Self {
         self.top = Some(value);
         self.right = Some(value);
@@ -43,38 +45,45 @@ impl PaddingBuilder {
         self
     }
 
+    #[inline]
     pub fn with_vertical(mut self, value: i32) -> Self {
         self.top = Some(value);
         self.bottom = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_horizontal(mut self, value: i32) -> Self {
         self.right = Some(value);
         self.left = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_top(mut self, value: i32) -> Self {
         self.top = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_right(mut self, value: i32) -> Self {
         self.right = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_bottom(mut self, value: i32) -> Self {
         self.bottom = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_left(mut self, value: i32) -> Self {
         self.left = Some(value);
         self
     }
 
+    #[inline]
     pub fn build(self) -> Padding {
         Padding {
             top: self.top.unwrap_or_default(),

@@ -17,6 +17,7 @@ pub struct ClusterizerBuilder {
 }
 
 impl ClusterizerBuilder {
+    #[inline]
     pub fn build(self) -> Result<Clusterizer, &'static str> {
         let intersection_threshold = match self.intersection_threshold {
             Some(value) => {
@@ -47,11 +48,13 @@ impl ClusterizerBuilder {
         })
     }
 
+    #[inline]
     pub fn with_intersection_threshold(mut self, value: f32) -> Self {
         self.intersection_threshold = Some(value);
         self
     }
 
+    #[inline]
     pub fn with_score_threshold(mut self, value: f32) -> Self {
         self.score_threshold = Some(value);
         self

@@ -9,6 +9,7 @@ use crate::utils::img::get_nearest_luma_by_point;
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);
 
 impl From<[i8; 4]> for ComparisonNode {
+    #[inline]
     fn from(data: [i8; 4]) -> Self {
         let [y0, x0, y1, x1] = data;
         Self(Point2::new(x0, y0), Point2::new(x1, y1))
@@ -16,6 +17,7 @@ impl From<[i8; 4]> for ComparisonNode {
 }
 
 impl From<[u8; 4]> for ComparisonNode {
+    #[inline]
     fn from(data: [u8; 4]) -> Self {
         let mut out: [MaybeUninit<i8>; 4] = unsafe { MaybeUninit::uninit().assume_init() };
 
@@ -28,12 +30,14 @@ impl From<[u8; 4]> for ComparisonNode {
 }
 
 impl From<ComparisonNode> for [i8; 4] {
+    #[inline]
     fn from(node: ComparisonNode) -> [i8; 4] {
         [node.0.y, node.0.x, node.1.y, node.1.x]
     }
 }
 
 impl From<ComparisonNode> for [u8; 4] {
+    #[inline]
     fn from(node: ComparisonNode) -> [u8; 4] {
         [
             node.0.y.to_le_bytes()[0],
@@ -67,19 +71,19 @@ const SCALE: i64 = u8::MAX as i64 + 1;
 const SHIFT: i32 = 8;
 
 #[allow(dead_code)]
-#[inline(always)]
+#[inline]
 fn na_transform(i: Point2<i64>, s: u32, n: Point2<i64>) -> Point2<i64> {
     (i * SCALE + n.coords * (s as i64)) / SCALE
 }
 
-#[inline(always)]
+#[inline]
 fn transform(i: Point2<i64>, s: u32, n: Point2<i64>) -> Point2<i64> {
     let (x, y) = original_transform(i.x, i.y, s, n.x, n.y);
     Point2::new(x, y)
 }
 
 #[allow(dead_code)]
-#[inline(always)]
+#[inline]
 fn original_transform(ix: i64, iy: i64, s: u32, nx: i64, ny: i64) -> (i64, i64) {
     let x = ((ix << SHIFT) + nx * (s as i64)) >> SHIFT;
     let y = ((iy << SHIFT) + ny * (s as i64)) >> SHIFT;

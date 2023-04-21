@@ -1,9 +1,9 @@
-#[macro_use]
-mod common;
+#[path = "./common/macros.rs"]
+mod macros;
 
 use std::fs;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, Criterion};
 
 use image;
 use pico_detect::{Localizer, utils::Square};
@@ -28,4 +28,3 @@ fn bench_localizer_localize(c: &mut Criterion) {
 }
 
 criterion_group!(benches, bench_localizer_load, bench_localizer_localize);
-criterion_main!(benches);

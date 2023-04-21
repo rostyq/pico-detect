@@ -60,6 +60,7 @@ impl Detector {
     }
 
     /// Create a detector object from a readable source.
+    #[inline]
     pub fn load(mut readable: impl Read) -> Result<Self, Error> {
         let mut buffer: [u8; 4] = [0u8; 4];
         // skip first 8 bytes;
@@ -131,6 +132,7 @@ pub struct MultiscaleDetectorBuilder {
 }
 
 impl MultiscaleDetectorBuilder {
+    #[inline]
     pub fn build(self, model: Detector) -> Result<MultiscaleDetector, &'static str> {
         Ok(MultiscaleDetector {
             multiscaler: self.multiscale_builder.build()?,
@@ -139,26 +141,31 @@ impl MultiscaleDetectorBuilder {
         })
     }
 
+    #[inline]
     pub fn with_clusterizer_builder(mut self, value: ClusterizerBuilder) -> Self {
         self.clusterizer_builder = value;
         self
     }
 
+    #[inline]
     pub fn with_multiscale_builder(mut self, value: MultiscalerBuilder) -> Self {
         self.multiscale_builder = value;
         self
     }
 
+    #[inline]
     pub fn map_clusterizer_builder<F: FnOnce(ClusterizerBuilder) -> ClusterizerBuilder>(self, f: F) -> Self {
         self.with_clusterizer_builder(f(self.clusterizer_builder))
     }
 
+    #[inline]
     pub fn map_multiscale_builder<F: FnOnce(MultiscalerBuilder) -> MultiscalerBuilder>(self, f: F) -> Self {
         self.with_multiscale_builder(f(self.multiscale_builder))
     }
 }
 
 impl MultiscaleDetector {
+    #[inline]
     pub fn builder() -> MultiscaleDetectorBuilder {
         Default::default()
     }

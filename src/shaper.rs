@@ -58,15 +58,18 @@ pub struct Shaper {
 }
 
 impl Shaper {
+    #[inline]
     pub fn size(&self) -> usize {
         self.shape.len()
     }
 
+    #[inline]
     pub fn init_points(&self) -> &[Point2<f32>] {
         self.shape.as_ref()
     }
 
     /// Create a shaper object from a readable source.
+    #[inline]
     pub fn load(mut readable: impl Read) -> Result<Self, Error> {
         let mut buf = [0u8; 4];
         readable.read_exact(&mut buf[0..1])?;
@@ -230,6 +233,7 @@ fn find_transform_to_image(rect: Rect) -> Affine2<f32> {
     ))
 }
 
+#[inline]
 fn read_shape(mut readable: impl Read, size: usize) -> Result<OMatrix<f32, U2, Dyn>, Error>
 where
     DefaultAllocator: Allocator<f32, U2, Dyn>,

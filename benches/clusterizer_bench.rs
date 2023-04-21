@@ -1,11 +1,11 @@
-#[macro_use]
-mod common;
+#[path = "./common/macros.rs"]
+mod macros;
 
 use rand::distributions::OpenClosed01;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
 use pico_detect::utils::{Clusterizer, Detection, Perturbator, Square};
 
@@ -39,4 +39,3 @@ fn bench_clusterizer_run(c: &mut Criterion) {
 }
 
 criterion_group!(benches, bench_clusterizer_run);
-criterion_main!(benches);

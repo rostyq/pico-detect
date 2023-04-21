@@ -1,9 +1,9 @@
-#[macro_use]
-mod common;
+#[path = "./common/macros.rs"]
+mod macros;
 
 use std::fs;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, Criterion};
 
 use image;
 use pico_detect::{Shaper, utils::Square};
@@ -28,4 +28,3 @@ fn bench_shaper_shape(c: &mut Criterion) {
 }
 
 criterion_group!(benches, bench_shaper_load, bench_shaper_shape);
-criterion_main!(benches);
