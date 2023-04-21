@@ -59,6 +59,17 @@ impl ClusterizerBuilder {
 }
 
 impl Clusterizer {
+    #[inline]
+    pub fn intersection_threshold(&self) -> f32 {
+        self.intersection_threshold
+    }
+
+    #[inline]
+    pub fn score_threshold(&self) -> f32 {
+        self.score_threshold
+    }
+
+    #[inline]
     pub fn builder() -> ClusterizerBuilder {
         Default::default()
     }
