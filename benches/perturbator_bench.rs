@@ -3,7 +3,7 @@ mod macros;
 
 use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
-use pico_detect::utils::{Perturbator, Square};
+use pico_detect::{utils::Square, Perturbator};
 
 fn bench_perturbator_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("Perturbator::run");

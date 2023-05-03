@@ -5,7 +5,7 @@ use image::{GenericImageView, Luma};
 use nalgebra::{Point2, Translation2, Vector2};
 
 use crate::nodes::ComparisonNode;
-use crate::utils::perturbator::{Perturbator, PerturbatorBuilder};
+use crate::perturbator::{Perturbator, PerturbatorBuilder};
 use crate::utils::target::Target;
 
 type Tree = Vec<ComparisonNode>;
@@ -208,7 +208,7 @@ mod tests {
     #[test]
     fn test_pupil_localizer_model_loading() {
         let puploc = Localizer::load(
-            include_bytes!("../models/pupil.localizer.bin")
+            include_bytes!("../../models/pupil.localizer.bin")
                 .to_vec()
                 .as_slice(),
         )

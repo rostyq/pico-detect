@@ -3,8 +3,8 @@ use super::region::Region;
 /// Object detection data.
 #[derive(Debug, Copy, Clone)]
 pub struct Detection<R: Region> {
-    pub(super) region: R,
-    pub(super) score: f32,
+    pub(crate) region: R,
+    pub(crate) score: f32,
 }
 
 impl<R: Region> Detection<R> {

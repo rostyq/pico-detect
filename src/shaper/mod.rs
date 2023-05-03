@@ -255,7 +255,7 @@ mod tests {
     #[test]
     fn test_face_landmarks_model_loading() {
         let shaper = Shaper::load(
-            include_bytes!("../models/face-5.shaper.bin")
+            include_bytes!("../../models/face-5.shaper.bin")
                 .to_vec()
                 .as_slice(),
         )

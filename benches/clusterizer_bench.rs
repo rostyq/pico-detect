@@ -7,7 +7,7 @@ use rand_xorshift::XorShiftRng;
 
 use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
-use pico_detect::utils::{Clusterizer, Detection, Perturbator, Square};
+use pico_detect::{Clusterizer, Perturbator, utils::{Detection, Square}};
 
 fn bench_clusterizer_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("Clusterizer::clusterize");

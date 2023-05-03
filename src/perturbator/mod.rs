@@ -2,7 +2,7 @@ use rand::distributions::Uniform;
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
 
-use super::target::Target;
+use crate::utils::target::Target;
 
 #[derive(Clone, Debug)]
 pub struct Perturbator {

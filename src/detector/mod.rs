@@ -3,13 +3,13 @@ use std::io::{Error, ErrorKind, Read};
 use image::{GenericImageView, Luma};
 use nalgebra::Point2;
 
+use crate::clusterizer::{Clusterizer, ClusterizerBuilder};
+use crate::multiscaler::{Multiscaler, MultiscalerBuilder};
 use crate::nodes::ComparisonNode;
+use crate::utils::detection::Detection;
 use crate::utils::region::Region;
 use crate::utils::square::Square;
-use crate::utils::detection::Detection;
 use crate::utils::target::Target;
-use crate::utils::clusterizer::{Clusterizer, ClusterizerBuilder};
-use crate::utils::multiscaler::{Multiscaler, MultiscalerBuilder};
 
 struct Tree {
     nodes: Vec<ComparisonNode>,
@@ -154,12 +154,18 @@ impl MultiscaleDetectorBuilder {
     }
 
     #[inline]
-    pub fn map_clusterizer_builder<F: FnOnce(ClusterizerBuilder) -> ClusterizerBuilder>(self, f: F) -> Self {
+    pub fn map_clusterizer_builder<F: FnOnce(ClusterizerBuilder) -> ClusterizerBuilder>(
+        self,
+        f: F,
+    ) -> Self {
         self.with_clusterizer_builder(f(self.clusterizer_builder))
     }
 
     #[inline]
-    pub fn map_multiscale_builder<F: FnOnce(MultiscalerBuilder) -> MultiscalerBuilder>(self, f: F) -> Self {
+    pub fn map_multiscale_builder<F: FnOnce(MultiscalerBuilder) -> MultiscalerBuilder>(
+        self,
+        f: F,
+    ) -> Self {
         self.with_multiscale_builder(f(self.multiscale_builder))
     }
 }
@@ -203,8 +209,12 @@ mod tests {
 
     #[test]
     fn test_face_detector_model_loading() {
-        let facefinder = Detector::load(include_bytes!("../models/face.detector.bin").to_vec().as_slice())
-            .expect("parsing failed");
+        let facefinder = Detector::load(
+            include_bytes!("../../models/face.detector.bin")
+                .to_vec()
+                .as_slice(),
+        )
+        .expect("parsing failed");
         assert_eq!(6, facefinder.depth);
         assert_eq!(468, facefinder.trees.len());
 

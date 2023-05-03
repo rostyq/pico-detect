@@ -1,8 +1,8 @@
-use super::detection::Detection;
-use super::region::Region;
-use super::square::Square;
-use super::target::Target;
-use super::iou::intersection_over_union;
+use crate::utils::detection::Detection;
+use crate::utils::region::Region;
+use crate::utils::square::Square;
+use crate::utils::target::Target;
+use crate::utils::iou::intersection_over_union;
 
 pub struct Clusterizer {
     intersection_threshold: f32,

@@ -5,7 +5,7 @@ use std::fmt::Display;
 
 use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
-use pico_detect::utils::Multiscaler;
+use pico_detect::Multiscaler;
 
 #[derive(Clone, Copy, Debug)]
 struct Size {
