@@ -1,4 +1,5 @@
-use pico_detect::utils::{Point2, Target};
+use nalgebra::Point2;
+use pico_detect::Target;
 
 #[derive(Clone, Debug)]
 pub struct Face {

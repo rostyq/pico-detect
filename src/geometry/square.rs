@@ -1,5 +1,6 @@
-use super::region::Region;
 use imageproc::rect::Rect;
+
+use crate::traits::region::Region;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Square {
@@ -25,7 +26,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn from_region<T: Region>(value: T) -> Result<Self, &'static str> {
+    pub fn from_region<T: Region>(value: T) -> Result<Self, String> {
         if value.is_square() {
             Ok(Self {
                 left: value.left(),
@@ -33,7 +34,7 @@ impl Square {
                 size: value.width(),
             })
         } else {
-            Err("Region is not a square")
+            Err("Region is not a square".into())
         }
     }
 

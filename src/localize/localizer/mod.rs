@@ -1,13 +1,10 @@
-use std::cmp::Ordering;
 use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 use nalgebra::{Point2, Translation2, Vector2};
-use rand::RngCore;
 
 use crate::nodes::ComparisonNode;
-use crate::perturbator::{Perturbator, PerturbatorBuilder};
-use crate::utils::target::Target;
+use crate::geometry::Target;
 
 type Tree = Vec<ComparisonNode>;
 type Predictions = Vec<Vector2<f32>>;
@@ -123,86 +120,6 @@ impl Localizer {
     }
 }
 
-pub struct PerturbatingLocalizer {
-    pub model: Localizer,
-    pub perturbator: Perturbator,
-    pub perturbs: usize,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct PerturbatingLocalizerBuilder {
-    pub perturbator_builder: PerturbatorBuilder,
-    pub perturbs: Option<usize>,
-}
-
-impl PerturbatingLocalizerBuilder {
-    #[inline]
-    pub fn with_perturbs(mut self, value: usize) -> Self {
-        self.perturbs = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn map_perturbator_builder<F: FnOnce(PerturbatorBuilder) -> PerturbatorBuilder>(
-        mut self,
-        f: F,
-    ) -> Self {
-        self.perturbator_builder = f(self.perturbator_builder);
-        self
-    }
-
-    #[inline]
-    pub fn build(self, model: Localizer) -> Result<PerturbatingLocalizer, &'static str> {
-        if let Some(value) = self.perturbs {
-            if (value % 2) == 0 {
-                return Err("`nperturbs` should be odd");
-            }
-        }
-
-        Ok(PerturbatingLocalizer {
-            perturbs: self.perturbs.unwrap_or(15),
-            perturbator: self.perturbator_builder.build()?,
-            model,
-        })
-    }
-}
-
-impl PerturbatingLocalizer {
-    #[inline]
-    pub fn builder() -> PerturbatingLocalizerBuilder {
-        Default::default()
-    }
-
-    #[inline]
-    pub fn localize<I, R>(&self, rng: &mut R, image: &I, roi: Target) -> Point2<f32>
-    where
-        I: GenericImageView<Pixel = Luma<u8>>,
-        R: RngCore,
-    {
-        let mut xs: Vec<f32> = Vec::with_capacity(self.perturbs);
-        let mut ys: Vec<f32> = Vec::with_capacity(self.perturbs);
-
-        let model = &self.model;
-
-        self.perturbator.run(rng, self.perturbs, roi, |s| {
-            let p = model.localize(image, s);
-            xs.push(p.x);
-            ys.push(p.y);
-        });
-
-        #[inline]
-        fn compare(a: &f32, b: &f32) -> Ordering {
-            a.partial_cmp(b).unwrap()
-        }
-        xs.sort_by(compare);
-        ys.sort_by(compare);
-
-        let index = (self.perturbs - 1) / 2;
-
-        Point2::new(xs[index], ys[index])
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -210,7 +127,7 @@ mod tests {
     #[test]
     fn test_pupil_localizer_model_loading() {
         let puploc = Localizer::load(
-            include_bytes!("../../models/pupil.localizer.bin")
+            include_bytes!("../../../models/pupil.localizer.bin")
                 .to_vec()
                 .as_slice(),
         )

@@ -1,32 +1,30 @@
-extern crate image;
-extern crate imageproc;
-extern crate nalgebra;
-extern crate rand;
-extern crate similarity_least_squares;
-#[macro_use]
-extern crate derive_builder;
+pub extern crate image;
+pub extern crate imageproc;
+pub extern crate nalgebra;
+pub extern crate rand;
 
-pub use image::{GenericImageView, Luma};
+extern crate similarity_least_squares;
+
+extern crate derive_builder;
 
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
 
+mod geometry;
+mod imageutils;
 mod nodes;
-pub mod utils;
+mod traits;
 
-mod clusterizer;
-mod multiscaler;
-mod perturbator;
+mod detect;
+mod localize;
+mod shape;
 
-mod detector;
-mod localizer;
-mod shaper;
+pub use geometry::{Square, Target};
 
-pub use clusterizer::Clusterizer;
-pub use multiscaler::{Multiscaler, MultiscalerBuilder};
-pub use perturbator::{Perturbator, PerturbatorBuilder};
-
-pub use detector::{Detector, MultiscaleDetector, MultiscaleDetectorBuilder};
-pub use localizer::{Localizer, PerturbatingLocalizer, PerturbatingLocalizerBuilder};
-pub use shaper::Shaper;
+pub use detect::{
+    clusterize, multiscale, DetectMultiscale, DetectMultiscaleBuilder,
+    DetectMultiscaleBuilderError, Detector, Padding, Detection
+};
+pub use localize::{perturbate, Localizer, LocalizePerturbate};
+pub use shape::Shaper;

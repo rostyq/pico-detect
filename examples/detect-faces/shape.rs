@@ -1,4 +1,5 @@
-use pico_detect::utils::{Point2, Square};
+use nalgebra::Point2;
+use pico_detect::Square;
 
 pub enum Shape5 {
     LeftOuterEyeCorner = 0,

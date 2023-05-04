@@ -1,7 +1,9 @@
 use imageproc::rect::Rect;
 use nalgebra::Point2;
 
-use super::{Detection, Region, Square};
+use crate::traits::Region;
+
+use super::Square;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Target {
@@ -15,14 +17,6 @@ impl Target {
         Self {
             point: Point2::new(x, y),
             size: s,
-        }
-    }
-
-    #[inline]
-    pub fn detection(self, score: f32) -> Detection<Self> {
-        Detection {
-            region: self,
-            score,
         }
     }
 

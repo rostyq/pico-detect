@@ -5,7 +5,8 @@ use std::fmt::Display;
 
 use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
-use pico_detect::Multiscaler;
+use imageproc::rect::Rect;
+use pico_detect::multiscale::Multiscaler;
 
 #[derive(Clone, Copy, Debug)]
 struct Size {
@@ -21,7 +22,10 @@ impl Display for Size {
 
 impl From<(u32, u32)> for Size {
     fn from(value: (u32, u32)) -> Self {
-        Self { width: value.0, height: value.1 }
+        Self {
+            width: value.0,
+            height: value.1,
+        }
     }
 }
 
@@ -38,19 +42,23 @@ fn bench_multiscale_run(c: &mut Criterion) {
 
     for size in SIZES.iter().map(|s| Size::from(*s)) {
         let ms = Multiscaler::builder()
-            .with_min_size(100)
-            .with_max_size(size.height)
+            .min_size(100)
+            .max_size(size.height)
             .build()
             .unwrap();
 
         let id = BenchmarkId::from_parameter(size);
 
-        group.throughput(Throughput::Elements(ms.count(size.width, size.height) as u64));
+        group.throughput(Throughput::Elements(
+            ms.count(Rect::at(0, 0).of_size(size.width, size.height)) as u64,
+        ));
 
         group.bench_with_input(id, &size, |b, &s| {
-            b.iter(||  ms.run(s.width, s.height, |s| {
-                black_box(s);
-            }))
+            b.iter(|| {
+                ms.run(Rect::at(0, 0).of_size(s.width, s.height), |s| {
+                    black_box(s);
+                })
+            })
         });
     }
 

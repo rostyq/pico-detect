@@ -5,7 +5,7 @@ use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
 use rand::prelude::*;
 
-use pico_detect::{Clusterizer, Perturbator, utils::{Detection, Square}};
+use pico_detect::{clusterize::Clusterizer, perturbate::Perturbator, Detection, Square};
 use rand_xoshiro::Xoroshiro128PlusPlus;
 
 fn bench_clusterizer_run(c: &mut Criterion) {
@@ -18,18 +18,23 @@ fn bench_clusterizer_run(c: &mut Criterion) {
         group.throughput(Throughput::Elements(*n as u64));
 
         group.bench_with_input(id, &n, |b, &n| {
-            let perturbator = Perturbator::builder().build().unwrap();
-            let mut clusterizer = Clusterizer::builder()
-                .with_intersection_threshold(0.9)
-                .build()
-                .unwrap();
+            let perturbator = Perturbator::default();
+            let clusterizer = Clusterizer::default();
+
             let mut rng = Xoroshiro128PlusPlus::seed_from_u64(42);
 
+            let mut data = Vec::with_capacity(*n);
+
             perturbator.run(&mut rng, *n, init, |s| {
-                clusterizer.push(black_box(Detection::new(s, 1.0)));
+                data.push(Detection::new(s.into(), 1.0));
             });
 
-            b.iter(|| clusterizer.clusterize());
+            b.iter(|| {
+                clusterizer.clusterize(
+                    black_box(data.to_owned()).as_mut_slice(),
+                    &mut Vec::with_capacity(*n),
+                )
+            });
         });
     }
 

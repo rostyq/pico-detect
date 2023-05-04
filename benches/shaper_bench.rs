@@ -6,7 +6,7 @@ use std::fs;
 use criterion::{black_box, criterion_group, Criterion};
 
 use image;
-use pico_detect::{Shaper, utils::Square};
+use pico_detect::{Shaper, Square};
 
 fn bench_shaper_load(c: &mut Criterion) {
     let model_data = fs::read(model_path!(shaper)).unwrap();

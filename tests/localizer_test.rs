@@ -1,28 +1,45 @@
-#[macro_use]
 mod common;
 
-use image;
+use approx::assert_abs_diff_eq;
+use image::GrayImage;
+use rstest::rstest;
+
 use nalgebra::Point2;
 
-use pico_detect::{utils::Square, Localizer};
+use common::{localize_case, localize_perturbate_case, localizer, localize_perturbate, rng};
 
-#[macro_use]
-extern crate approx;
+use pico_detect::{Localizer, Square, LocalizePerturbate};
 
-#[test]
-fn test_localizer_localize() {
-    let image = load_test_image!();
-    let localizer = load_model!(puploc);
+#[rstest]
+fn test_localizer_localize(
+    localizer: Localizer,
+    localize_case: (GrayImage, [(Square, Point2<f32>); 2]),
+) {
+    let (image, tests) = localize_case;
 
-    assert_abs_diff_eq!(
-        localizer.localize(&image, Square::new(321, 259, 15).into()),
-        Point2::new(326.8915, 266.5068),
-        epsilon = 1e-4
-    );
+    for (region, point) in tests.iter() {
+        assert_abs_diff_eq!(
+            localizer.localize(&image, region.to_owned().into()),
+            point,
+            epsilon = 1e-4
+        );
+    }
+}
 
-    assert_abs_diff_eq!(
-        localizer.localize(&image, Square::new(259, 259, 15).into()),
-        Point2::new(266.5190, 267.5272),
-        epsilon = 1e-4
-    );
+#[rstest]
+fn test_localize_perturbate_run(
+    localizer: Localizer,
+    mut rng: rand_xoshiro::Xoroshiro128PlusPlus,
+    localize_perturbate: LocalizePerturbate,
+    localize_perturbate_case: (GrayImage, [(Square, Point2<f32>); 2]),
+) {
+    let (image, tests) = localize_perturbate_case;
+
+    for (region, point) in tests.iter() {
+        assert_abs_diff_eq!(
+            localize_perturbate.run(&localizer, &mut rng, &image, region.to_owned().into()),
+            point,
+            epsilon = 1.0
+        );
+    }
 }

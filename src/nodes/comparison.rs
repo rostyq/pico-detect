@@ -3,7 +3,7 @@ use std::mem::{transmute, MaybeUninit};
 use image::{GenericImageView, Luma};
 use nalgebra::Point2;
 
-use crate::utils::img::get_nearest_luma_by_point;
+use crate::imageutils::get_nearest_luma_by_point;
 
 #[derive(Debug, PartialEq)]
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);

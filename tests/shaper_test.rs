@@ -1,33 +1,20 @@
-#[macro_use]
 mod common;
 
-use image;
+use rstest::rstest;
+use approx::assert_abs_diff_eq;
 
-use pico_detect::{Shaper, utils::{Point2, Rect}};
+use image::GrayImage;
+use nalgebra::Point2;
 
-#[macro_use]
-extern crate approx;
+use pico_detect::{Shaper, Square};
 
-#[test]
-fn test_shaper_predict() {
-    let shaper = load_model!(shaper);
-    let image = load_test_image!();
+use common::{shaper, shaper_case};
 
-    let test_points = vec![
-        [341.8397, 269.6037],
-        [318.1169, 272.2306],
-        [253.2326, 266.5196],
-        [284.6829, 271.6468],
-        [306.5808, 331.5721],
-    ];
+#[rstest]
+fn test_shaper_predict(shaper: Shaper, shaper_case: (GrayImage, Square, Vec<Point2<f32>>)) {
+    let (image, region, points) = shaper_case;
 
-    let size = 153;
-    let left = 213;
-    let top = 225;
-    let rect = Rect::at(left, top).of_size(size, size);
-    let points = dbg!(shaper.shape(&image, rect));
-
-    for (point, test_data) in points.iter().zip(test_points.iter()) {
-        assert_abs_diff_eq!(*point, Point2::from(*test_data), epsilon = 1e-4);
+    for (p1, p2) in shaper.shape(&image, region.into()).iter().zip(points.iter()) {
+        assert_abs_diff_eq!(*p1, *p2, epsilon = 1e-4);
     }
 }

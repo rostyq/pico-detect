@@ -6,7 +6,7 @@ use std::fs;
 use criterion::{black_box, criterion_group, Criterion};
 
 use image;
-use pico_detect::{Detector, utils::Square};
+use pico_detect::{Detector, Square};
 
 fn bench_detector_load(c: &mut Criterion) {
     let model_data = fs::read(model_path!(facefinder)).unwrap();

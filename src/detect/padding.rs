@@ -1,3 +1,4 @@
+use image::GenericImageView;
 use imageproc::rect::Rect;
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -59,5 +60,10 @@ impl Padding {
         let w = (width as i32) - self.right - self.left;
         let h = (height as i32) - self.bottom - self.top;
         Rect::at(self.left, self.top).of_size(w as u32, h as u32)
+    }
+
+    #[inline]
+    pub fn image_rect<I: GenericImageView>(self, image: &I) -> Rect {
+        self.rect(image.width(), image.height())
     }
 }

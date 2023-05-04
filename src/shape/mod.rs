@@ -9,7 +9,7 @@ use nalgebra::{
 };
 
 use crate::nodes::ThresholdNode;
-use crate::utils::img::get_luma_by_point_f32;
+use crate::imageutils::get_luma_by_point_f32;
 
 struct Tree {
     nodes: Vec<ThresholdNode>,

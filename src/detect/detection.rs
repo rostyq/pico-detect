@@ -1,4 +1,4 @@
-use super::region::Region;
+use crate::traits::Region;
 
 /// Object detection data.
 #[derive(Debug, Copy, Clone)]

@@ -1,10 +1,11 @@
 extern crate pico_detect;
 
-mod args;
 #[macro_use]
 mod models;
+
+mod args;
+
 mod face;
-mod init;
 mod shape;
 mod utils;
 
@@ -24,13 +25,15 @@ fn main() -> Result<()> {
 
     let image = image::open(&args.input).context("Failed to load image file.")?;
 
-    let (mut detector, shaper, localizer) = init::initialize(&args, &image)?;
+    let (detector, localizer, shaper) = args.load_models()?;
+    let (multiscale, localize) = args.init(&image)?;
+
     let mut rng = Xoroshiro128PlusPlus::seed_from_u64(42);
 
     let gray = image.to_owned().into_luma8();
 
-    let faces: Vec<Face> = detector
-        .detect(&gray)
+    let faces: Vec<Face> = multiscale
+        .run(&detector, &gray)
         .iter()
         .map(|d| {
             let roi = *d.region();
@@ -38,8 +41,8 @@ fn main() -> Result<()> {
             let shape = shaper.shape(&gray, roi.into());
 
             let (left_eye_roi, right_eye_roi) = Shape5::find_eyes_roi(&shape);
-            let left_pupil = localizer.localize(&mut rng, &gray, left_eye_roi.into());
-            let right_pupil = localizer.localize(&mut rng, &gray, right_eye_roi.into());
+            let left_pupil = localize.run(&localizer, &mut rng, &gray, left_eye_roi.into());
+            let right_pupil = localize.run(&localizer, &mut rng, &gray, right_eye_roi.into());
 
             Face {
                 region: roi.into(),

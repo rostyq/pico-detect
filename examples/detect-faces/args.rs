@@ -1,5 +1,13 @@
-use std::path::PathBuf;
+use anyhow::{Context, Result};
 use clap::Parser;
+use image::DynamicImage;
+use pico_detect::{
+    clusterize::Clusterizer, multiscale::Multiscaler, DetectMultiscale, Detector,
+    LocalizePerturbate, Localizer, Padding, Shaper,
+};
+use std::path::PathBuf;
+
+use crate::{load_model, localizer, shaper};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "CLI human face detection using PICO models.")]
@@ -57,6 +65,41 @@ pub struct Args {
 
     #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub models_dir: Option<PathBuf>,
+}
+
+impl Args {
+    pub fn load_models(&self) -> Result<(Detector, Localizer, Shaper)> {
+        Ok((detector!(self), localizer!(self), shaper!(self)))
+    }
+
+    pub fn init(&self, image: &DynamicImage) -> Result<(DetectMultiscale, LocalizePerturbate)> {
+        Ok((
+            DetectMultiscale::builder()
+                .multiscaler(
+                    Multiscaler::builder()
+                        .min_size(self.min_size)
+                        .scale_factor(self.scale_factor)
+                        .shift_factor(self.shift_factor)
+                        .max_size(
+                            self.max_size
+                                .unwrap_or_else(|| image.height().min(image.width())),
+                        )
+                        .build()?,
+                )
+                .clusterizer(Clusterizer {
+                    intersection_threshold: self.intersection_threshold,
+                    score_threshold: self.score_threshold,
+                })
+                .padding(Padding {
+                    top: self.top_padding,
+                    right: self.right_padding,
+                    bottom: self.bottom_padding,
+                    left: self.left_padding,
+                })
+                .build()?,
+            LocalizePerturbate::new(self.localizer_perturbs),
+        ))
+    }
 }
 
 pub fn parse() -> Args {

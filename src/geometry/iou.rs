@@ -1,5 +1,6 @@
-use super::region::Region;
 use std::cmp::{min, max};
+
+use crate::traits::Region;
 
 #[inline]
 pub fn intersection_over_union<R: Region>(r1: R, r2: R) -> Option<f32> {
@@ -23,8 +24,9 @@ pub fn intersection_over_union<R: Region>(r1: R, r2: R) -> Option<f32> {
 
 #[cfg(test)]
 mod tests {
+    use crate::geometry::Square;
+
     use super::*;
-    use crate::utils::square::Square;
 
     #[test]
     fn test_intersection_over_union() {

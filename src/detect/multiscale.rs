@@ -1,10 +1,10 @@
 use derive_builder::Builder;
 use imageproc::rect::Rect;
 
-use crate::utils::square::Square;
+use crate::geometry::Square;
 
 #[derive(Copy, Clone, Debug, Builder)]
-#[builder(build_fn(validate = "Self::validate"))]
+#[builder(build_fn(validate = "Multiscaler::validate"))]
 pub struct Multiscaler {
     min_size: u32,
     max_size: u32,
@@ -15,7 +15,8 @@ pub struct Multiscaler {
 }
 
 impl Multiscaler {
-    fn validate(builder: &MultiscalerBuilder) -> Result<(), String> {
+    #[inline]
+    pub fn validate(builder: &MultiscalerBuilder) -> Result<(), String> {
         if let Some(value) = builder.min_size {
             if value == 0 {
                 return Err("`min_size` should be non zero".into());
@@ -23,13 +24,13 @@ impl Multiscaler {
         }
 
         if let Some((min_size, max_size)) = builder.min_size.zip(builder.max_size) {
-            if min_size < max_size {
+            if min_size > max_size {
                 return Err("`max_size` should be greater than `min_size`".into());
             }
         }
 
         if let Some(value) = builder.shift_factor {
-            if value < 0.0 || value > 1.0 {
+            if !(0.0..=1.0).contains(&value) {
                 return Err("`shift_factor` should be in `(0, 1]` range".into());
             }
         }
@@ -64,32 +65,18 @@ impl Multiscaler {
     }
 
     #[inline]
-    pub fn run<F>(&self, rect: Rect, mut f: F)
+    pub fn run<F>(&self, rect: Rect, f: F)
     where
         F: FnMut(Square),
     {
-        let mut size = self.min_size;
-
-        let start_x = rect.left();
-        let start_y = rect.top();
-
-        let right = start_x + rect.width() as i32;
-        let bottom = start_y + rect.height() as i32;
-
-        while size <= self.max_size {
-            let sizef = size as f32;
-            let step: usize = 1.max((sizef * self.shift_factor) as usize);
-
-            let end_x = right - size as i32;
-            let end_y = bottom - size as i32;
-
-            for y in (start_y..=end_y).step_by(step) {
-                for x in (start_x..=end_x).step_by(step) {
-                    f(Square::new(x as i64, y as i64, size))
-                }
-            }
-            size = (sizef * self.scale_factor) as u32;
-        }
+        multiscale(
+            self.min_size,
+            self.max_size,
+            self.shift_factor,
+            self.scale_factor,
+            rect,
+            f,
+        )
     }
 
     #[inline]
@@ -104,6 +91,41 @@ impl Multiscaler {
         let mut result = Vec::with_capacity(self.count(rect));
         self.run(rect, |s| result.push(s));
         result
+    }
+}
+
+#[inline]
+pub fn multiscale<F>(
+    min_size: u32,
+    max_size: u32,
+    shift_factor: f32,
+    scale_factor: f32,
+    rect: Rect,
+    mut f: F,
+) where
+    F: FnMut(Square),
+{
+    let mut size = min_size;
+
+    let start_x = rect.left();
+    let start_y = rect.top();
+
+    let right = start_x + rect.width() as i32;
+    let bottom = start_y + rect.height() as i32;
+
+    while size <= max_size {
+        let sizef = size as f32;
+        let step: usize = 1.max((sizef * shift_factor) as usize);
+
+        let end_x = right - size as i32;
+        let end_y = bottom - size as i32;
+
+        for y in (start_y..=end_y).step_by(step) {
+            for x in (start_x..=end_x).step_by(step) {
+                f(Square::new(x as i64, y as i64, size))
+            }
+        }
+        size = (sizef * scale_factor) as u32;
     }
 }
 
@@ -124,4 +146,3 @@ mod tests {
         ms.run(Rect::at(0, 0).of_size(4, 4), |s| println!("{:?}", s));
     }
 }
-

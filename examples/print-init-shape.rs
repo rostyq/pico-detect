@@ -8,8 +8,9 @@ use imageproc::{
     drawing::{draw_filled_circle_mut, draw_text_mut},
     geometry::min_area_rect,
     point::Point,
+    rect::Rect,
 };
-use pico_detect::{utils::Rect, Shaper};
+use pico_detect::Shaper;
 use rusttype::{Font, Scale};
 
 #[derive(Parser, Debug)]
