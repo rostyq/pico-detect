@@ -1,18 +1,15 @@
+mod tree;
+
 use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 
-use crate::nodes::ComparisonNode;
 use crate::traits::Region;
 use crate::geometry::Square;
 
 use super::Detection;
 
-pub struct DetectorTree {
-    pub(super) nodes: Vec<ComparisonNode>,
-    pub(super) predictions: Vec<f32>,
-    pub(super) threshold: f32,
-}
+use tree::DetectorTree;
 
 /// Implements object detection using a cascade of decision tree classifiers.
 pub struct Detector {
@@ -74,12 +71,12 @@ impl Detector {
         readable.read_exact(&mut buffer)?;
         let depth = i32::from_le_bytes(buffer) as usize;
 
-        let pred_size: usize = match 2usize.checked_pow(depth as u32) {
+        let pred_count: usize = match 2usize.checked_pow(depth as u32) {
             Some(value) => value,
             None => return Err(Error::new(ErrorKind::Other, "depth overflow")),
         };
         // first node appended from code
-        let tree_size = pred_size - 1;
+        let node_count = pred_count - 1;
 
         readable.read_exact(&mut buffer)?;
         let ntrees = i32::from_le_bytes(buffer) as usize;
@@ -87,27 +84,7 @@ impl Detector {
         let mut trees: Vec<DetectorTree> = Vec::with_capacity(ntrees);
 
         for _ in 0..ntrees {
-            let mut nodes = Vec::with_capacity(tree_size);
-            let mut predictions = Vec::with_capacity(pred_size);
-            nodes.push(ComparisonNode::from([0i8, 0i8, 0i8, 0i8]));
-
-            for _ in 0..tree_size {
-                readable.read_exact(&mut buffer)?;
-                nodes.push(ComparisonNode::from(buffer));
-            }
-
-            for _ in 0..pred_size {
-                readable.read_exact(&mut buffer)?;
-                predictions.push(f32::from_le_bytes(buffer));
-            }
-
-            readable.read_exact(&mut buffer)?;
-            let threshold = f32::from_le_bytes(buffer);
-            trees.push(DetectorTree {
-                nodes,
-                predictions,
-                threshold,
-            });
+            trees.push(DetectorTree::load(&mut readable, node_count, pred_count)?);
         }
 
         let threshold = trees
@@ -117,7 +94,7 @@ impl Detector {
 
         Ok(Self {
             depth,
-            dsize: pred_size,
+            dsize: pred_count,
             forest: trees,
             threshold,
         })
@@ -126,6 +103,8 @@ impl Detector {
 
 #[cfg(test)]
 mod tests {
+    use crate::nodes::ComparisonNode;
+
     use super::*;
 
     #[test]
