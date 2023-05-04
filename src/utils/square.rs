@@ -3,9 +3,9 @@ use imageproc::rect::Rect;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Square {
-    left: i64,
-    top: i64,
-    size: u32,
+    pub(crate) left: i64,
+    pub(crate) top: i64,
+    pub(crate) size: u32,
 }
 
 impl Square {

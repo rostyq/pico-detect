@@ -23,7 +23,7 @@ fn bench_detector_detect(c: &mut Criterion) {
     let s = Square::new(216, 208, 170);
 
     c.bench_function("Detector::detect", |b| {
-        b.iter(|| detector.detect(black_box(&image), black_box(s)));
+        b.iter(|| detector.classify(black_box(&image), black_box(s)));
     });
 }
 

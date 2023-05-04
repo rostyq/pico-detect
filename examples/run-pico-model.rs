@@ -53,7 +53,7 @@ fn main() -> Result<()> {
     match args.model_type {
         ModelType::Detector => {
             let detector = Detector::load(file)?;
-            if let Some(score) = detector.detect(&image, square) {
+            if let Some(score) = detector.classify(&image, square) {
                 println!("{}", score);
             }
         }

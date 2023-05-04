@@ -74,8 +74,8 @@ impl Region for Target {
     }
 
     #[inline]
-    fn center(&self) -> (i64, i64) {
-        (self.x() as i64, self.y() as i64)
+    fn center(&self) -> Point2<i64> {
+        Point2::new(self.x() as i64, self.y() as i64)
     }
 }
 
@@ -96,7 +96,9 @@ impl From<Target> for Square {
 impl From<Square> for Target {
     #[inline]
     fn from(value: Square) -> Self {
-        let (x, y) = value.center();
-        Self::new(x as f32, y as f32, value.size() as f32)
+        Self {
+            point: value.center().cast(),
+            size: value.size() as f32,
+        }
     }
 }

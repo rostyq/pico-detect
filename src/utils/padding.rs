@@ -20,76 +20,44 @@ impl Padding {
     }
 
     #[inline]
-    pub fn rect(&self, width: u32, height: u32) -> Rect {
-        let w = (width as i32) - self.right;
-        let h = (height as i32) - self.bottom;
+    pub fn top(self, value: i32) -> Self {
+        Self { top: value, ..self }
+    }
+
+    #[inline]
+    pub fn right(self, value: i32) -> Self {
+        Self { right: value, ..self }
+    }
+
+    #[inline]
+    pub fn bottom(self, value: i32) -> Self {
+        Self { bottom: value, ..self }
+    }
+
+    #[inline]
+    pub fn all(value: i32) -> Self {
+        Self { top: value, right: value, bottom: value, left: value }
+    }
+
+    #[inline]
+    pub fn vertical(self, value: i32) -> Self {
+        Self { top: value, bottom: value, ..self }
+    }
+
+    #[inline]
+    pub fn horizontal(self, value: i32) -> Self {
+        Self { right: value, left: value, ..self }
+    }
+
+    #[inline]
+    pub fn left(self, value: i32) -> Self {
+        Self { left: value, ..self }
+    }
+
+    #[inline]
+    pub fn rect(self, width: u32, height: u32) -> Rect {
+        let w = (width as i32) - self.right - self.left;
+        let h = (height as i32) - self.bottom - self.top;
         Rect::at(self.left, self.top).of_size(w as u32, h as u32)
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct PaddingBuilder {
-    pub top: Option<i32>,
-    pub right: Option<i32>,
-    pub bottom: Option<i32>,
-    pub left: Option<i32>,
-}
-
-impl PaddingBuilder {
-    #[inline]
-    pub fn with_all(mut self, value: i32) -> Self {
-        self.top = Some(value);
-        self.right = Some(value);
-        self.bottom = Some(value);
-        self.left = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn with_vertical(mut self, value: i32) -> Self {
-        self.top = Some(value);
-        self.bottom = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn with_horizontal(mut self, value: i32) -> Self {
-        self.right = Some(value);
-        self.left = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn with_top(mut self, value: i32) -> Self {
-        self.top = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn with_right(mut self, value: i32) -> Self {
-        self.right = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn with_bottom(mut self, value: i32) -> Self {
-        self.bottom = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn with_left(mut self, value: i32) -> Self {
-        self.left = Some(value);
-        self
-    }
-
-    #[inline]
-    pub fn build(self) -> Padding {
-        Padding {
-            top: self.top.unwrap_or_default(),
-            right: self.right.unwrap_or_default(),
-            bottom: self.bottom.unwrap_or_default(),
-            left: self.left.unwrap_or_default(),
-        }
     }
 }

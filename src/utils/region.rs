@@ -1,3 +1,5 @@
+use nalgebra::Point2;
+
 pub trait Region {
     fn left(&self) -> i64;
     fn top(&self) -> i64;
@@ -25,11 +27,16 @@ pub trait Region {
     }
 
     #[inline]
-    fn center(&self) -> (i64, i64) {
-        (
+    fn center(&self) -> Point2<i64> {
+        Point2::new(
             self.left() + (self.width() / 2 + 1) as i64,
             self.top() + (self.height() / 2 + 1) as i64,
         )
+    }
+
+    #[inline]
+    fn top_left(&self) -> Point2<i64> {
+        Point2::new(self.left(), self.top())
     }
 
     #[inline]

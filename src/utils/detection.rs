@@ -33,3 +33,17 @@ impl<R: Region> AsRef<R> for Detection<R> {
         &self.region
     }
 }
+
+impl<R: Region> PartialEq for Detection<R> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.score == other.score
+    }
+}
+
+impl<R: Region> PartialOrd for Detection<R> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.score.partial_cmp(&other.score)
+    }
+}

@@ -4,10 +4,15 @@ mod macros;
 use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
 
 use pico_detect::{utils::Square, Perturbator};
+use rand::SeedableRng;
+use rand_xoshiro::Xoroshiro128PlusPlus;
 
 fn bench_perturbator_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("Perturbator::run");
-    let mut p = Perturbator::builder().build().unwrap();
+
+    let perturbator = Perturbator::builder().build().unwrap();
+    let mut rng = Xoroshiro128PlusPlus::seed_from_u64(42);
+
     let init = Square::new(100, 100, 100).into();
 
     for n in [15, 19, 23, 27, 31].iter() {
@@ -17,7 +22,7 @@ fn bench_perturbator_run(c: &mut Criterion) {
 
         group.bench_with_input(id, &n, |b, &n| {
             b.iter(|| {
-                p.run(*n, init, |s| {
+                perturbator.run(&mut rng, *n, init, |s| {
                     black_box(s);
                 })
             })

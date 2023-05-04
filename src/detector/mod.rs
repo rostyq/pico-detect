@@ -1,11 +1,12 @@
 use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
-use nalgebra::Point2;
+use imageproc::rect::Rect;
 
-use crate::clusterizer::{Clusterizer, ClusterizerBuilder};
+use crate::clusterizer::Clusterizer;
 use crate::multiscaler::{Multiscaler, MultiscalerBuilder};
 use crate::nodes::ComparisonNode;
+use crate::utils::Padding;
 use crate::utils::detection::Detection;
 use crate::utils::region::Region;
 use crate::utils::square::Square;
@@ -37,13 +38,12 @@ impl Detector {
     /// * `Some(f32)` passed region is an object with score;
     /// * `None` -- if passed region is not an object.
     #[inline]
-    pub fn detect<I>(&self, image: &I, roi: Square) -> Option<f32>
+    pub fn classify<I>(&self, image: &I, roi: Square) -> Option<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
         let mut result = 0.0f32;
-        let (x, y) = roi.center();
-        let point = Point2::new(x, y);
+        let point = roi.center();
 
         for tree in self.trees.iter() {
             let idx = (0..self.depth).fold(1, |idx, _| {
@@ -57,6 +57,24 @@ impl Detector {
             }
         }
         Some(result - self.threshold)
+    }
+
+    #[inline]
+    pub fn detect<I>(&self, image: &I, roi: Square) -> Option<Detection<Square>>
+    where
+        I: GenericImageView<Pixel = Luma<u8>>,
+    {
+        self.classify(image, roi)
+            .map(|score| Detection { region: roi, score })
+    }
+
+    pub fn detect_multiscale<I>(&self, image: &I, ms: &Multiscaler)
+    where
+        I: GenericImageView<Pixel = Luma<u8>>,
+    {
+        ms.run(Rect::at(0, 0).of_size(image.width(), image.height()), |s| {
+            todo!();
+        })
     }
 
     /// Create a detector object from a readable source.
@@ -181,14 +199,14 @@ impl MultiscaleDetector {
     where
         I: GenericImageView<Pixel = Luma<u8>>,
     {
-        self.clusterizer.clear();
+        self.clusterizer.reset();
 
         let detector = &self.model;
         let clusterizer = &mut self.clusterizer;
 
         self.multiscaler.run(image.width(), image.height(), |s| {
-            if let Some(score) = detector.detect(image, s) {
-                clusterizer.push(Detection::new(s, score));
+            if let Some(detection) = detector.detect(image, s) {
+                clusterizer.push(detection);
             }
         });
     }

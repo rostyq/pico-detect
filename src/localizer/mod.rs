@@ -3,6 +3,7 @@ use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 use nalgebra::{Point2, Translation2, Vector2};
+use rand::RngCore;
 
 use crate::nodes::ComparisonNode;
 use crate::perturbator::{Perturbator, PerturbatorBuilder};
@@ -173,16 +174,17 @@ impl PerturbatingLocalizer {
     }
 
     #[inline]
-    pub fn localize<I>(&mut self, image: &I, roi: Target) -> Point2<f32>
+    pub fn localize<I, R>(&self, rng: &mut R, image: &I, roi: Target) -> Point2<f32>
     where
         I: GenericImageView<Pixel = Luma<u8>>,
+        R: RngCore,
     {
         let mut xs: Vec<f32> = Vec::with_capacity(self.perturbs);
         let mut ys: Vec<f32> = Vec::with_capacity(self.perturbs);
 
         let model = &self.model;
 
-        self.perturbator.run(self.perturbs, roi, |s| {
+        self.perturbator.run(rng, self.perturbs, roi, |s| {
             let p = model.localize(image, s);
             xs.push(p.x);
             ys.push(p.y);

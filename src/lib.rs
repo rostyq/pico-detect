@@ -2,8 +2,9 @@ extern crate image;
 extern crate imageproc;
 extern crate nalgebra;
 extern crate rand;
-extern crate rand_xorshift;
 extern crate similarity_least_squares;
+#[macro_use]
+extern crate derive_builder;
 
 pub use image::{GenericImageView, Luma};
 
@@ -22,7 +23,7 @@ mod detector;
 mod localizer;
 mod shaper;
 
-pub use clusterizer::{Clusterizer, ClusterizerBuilder};
+pub use clusterizer::Clusterizer;
 pub use multiscaler::{Multiscaler, MultiscalerBuilder};
 pub use perturbator::{Perturbator, PerturbatorBuilder};
 
