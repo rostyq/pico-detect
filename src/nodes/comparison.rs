@@ -1,5 +1,3 @@
-use std::mem::{transmute, MaybeUninit};
-
 use image::{GenericImageView, Luma};
 use nalgebra::Point2;
 
@@ -7,6 +5,13 @@ use crate::imageutils::get_nearest_luma_by_point;
 
 #[derive(Debug, PartialEq)]
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);
+
+impl Default for ComparisonNode {
+    #[inline]
+    fn default() -> Self {
+        Self(Point2::origin(), Point2::origin())
+    }
+}
 
 impl From<[i8; 4]> for ComparisonNode {
     #[inline]
@@ -19,13 +24,8 @@ impl From<[i8; 4]> for ComparisonNode {
 impl From<[u8; 4]> for ComparisonNode {
     #[inline]
     fn from(data: [u8; 4]) -> Self {
-        let mut out: [MaybeUninit<i8>; 4] = unsafe { MaybeUninit::uninit().assume_init() };
-
-        for (pos, o) in data.iter().zip(out.iter_mut()) {
-            *unsafe { o.assume_init_mut() } = i8::from_le_bytes(pos.to_le_bytes());
-        }
-
-        Self::from(unsafe { transmute::<_, [i8; 4]>(out) })
+        data.map(|value| i8::from_le_bytes(value.to_le_bytes()))
+            .into()
     }
 }
 
