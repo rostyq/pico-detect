@@ -28,3 +28,4 @@ pub use detect::{
 };
 pub use localize::{perturbate, Localizer, LocalizePerturbate};
 pub use shape::Shaper;
+pub use traits::Region;
