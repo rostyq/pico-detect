@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, io::BufReader,
 };
 
 use rstest::fixture;
@@ -169,6 +169,6 @@ pub fn detect_multiscale_case(test_image: GrayImage) -> (GrayImage, Vec<(Target,
     )
 }
 
-pub fn file<P: AsRef<Path>>(path: P) -> File {
-    File::open(path).unwrap()
+pub fn file<P: AsRef<Path>>(path: P) -> BufReader<File> {
+    BufReader::new(File::open(path).unwrap())
 }
