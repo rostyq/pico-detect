@@ -10,6 +10,7 @@ use rand::RngCore;
 
 use crate::Target;
 
+#[derive(Debug, Clone, Copy)]
 pub struct LocalizePerturbate {
     pub perturbator: Perturbator,
     pub runs: usize,

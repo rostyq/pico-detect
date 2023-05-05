@@ -5,7 +5,7 @@ use crate::traits::Region;
 
 use super::Square;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Target {
     pub(crate) point: Point2<f32>,
     pub(crate) size: f32,

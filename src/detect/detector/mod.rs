@@ -12,6 +12,7 @@ use super::Detection;
 use tree::DetectorTree;
 
 /// Implements object detection using a cascade of decision tree classifiers.
+#[derive(Debug, Clone)]
 pub struct Detector {
     depth: usize,
     dsize: usize,

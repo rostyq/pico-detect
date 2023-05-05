@@ -3,6 +3,7 @@ use std::io::{Error, Read};
 
 use crate::nodes::ComparisonNode;
 
+#[derive(Debug, Clone)]
 pub struct DetectorTree {
     pub(super) threshold: f32,
     pub(super) predictions: Vec<f32>,

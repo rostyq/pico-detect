@@ -11,16 +11,19 @@ use nalgebra::{
 use crate::nodes::ThresholdNode;
 use crate::imageutils::get_luma_by_point_f32;
 
+#[derive(Debug, Clone)]
 struct Tree {
     nodes: Vec<ThresholdNode>,
     shifts: Vec<Vec<Vector2<f32>>>,
 }
 
+#[derive(Debug, Clone)]
 struct Delta {
     anchor: usize,
     value: Vector2<f32>,
 }
 
+#[derive(Debug, Clone)]
 struct Forest {
     trees: Vec<Tree>,
     deltas: Vec<Delta>,
@@ -50,6 +53,7 @@ where
 }
 
 /// Implements object alignment using an ensemble of regression trees.
+#[derive(Debug, Clone)]
 pub struct Shaper {
     depth: usize,
     dsize: usize,

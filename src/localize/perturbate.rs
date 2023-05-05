@@ -3,7 +3,7 @@ use rand::{Rng, RngCore};
 
 use crate::geometry::Target;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Perturbator {
     pub scale: Uniform<f32>,
     pub translate: Uniform<f32>,

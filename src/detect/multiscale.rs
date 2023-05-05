@@ -3,7 +3,7 @@ use imageproc::rect::Rect;
 
 use crate::geometry::Square;
 
-#[derive(Copy, Clone, Debug, Builder)]
+#[derive(Copy, Clone, Debug, Builder, PartialEq)]
 #[builder(build_fn(validate = "Multiscaler::validate"))]
 pub struct Multiscaler {
     min_size: u32,

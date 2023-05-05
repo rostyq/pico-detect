@@ -3,15 +3,8 @@ use nalgebra::Point2;
 
 use crate::imageutils::get_nearest_luma_by_point;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);
-
-impl Default for ComparisonNode {
-    #[inline]
-    fn default() -> Self {
-        Self(Point2::origin(), Point2::origin())
-    }
-}
 
 impl From<[i8; 4]> for ComparisonNode {
     #[inline]

@@ -2,7 +2,7 @@ use imageproc::rect::Rect;
 
 use crate::traits::region::Region;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Square {
     pub(crate) left: i64,
     pub(crate) top: i64,

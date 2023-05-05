@@ -5,7 +5,7 @@ use super::detection::Detection;
 
 use nalgebra::Point2;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Clusterizer {
     pub intersection_threshold: f32,
     pub score_threshold: f32,
