@@ -48,8 +48,7 @@ impl ThresholdNode {
 
     #[inline]
     pub fn bintest(&self, features: &[u8]) -> bool {
-        let diff = Self::get_value(features, self.idx.0)
-            - Self::get_value(features, self.idx.1);
+        let diff = Self::get_value(features, self.idx.0) - Self::get_value(features, self.idx.1);
         self.threshold > diff
     }
 }
