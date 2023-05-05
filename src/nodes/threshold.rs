@@ -41,9 +41,15 @@ impl From<ThresholdNode> for [u8; 10] {
 }
 
 impl ThresholdNode {
+    #[inline(always)]
+    fn get_value(features: &[u8], index: usize) -> i16 {
+        (unsafe { *features.get_unchecked(index) }) as i16
+    }
+
     #[inline]
     pub fn bintest(&self, features: &[u8]) -> bool {
-        let diff = features[self.idx.0] as i16 - features[self.idx.1] as i16;
+        let diff = Self::get_value(features, self.idx.0)
+            - Self::get_value(features, self.idx.1);
         self.threshold > diff
     }
 }
