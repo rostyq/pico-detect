@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::{fs::File, io::BufReader};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
@@ -25,7 +25,7 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let file = File::open(&args.model_path).context("Failed to open model file.")?;
+    let file = BufReader::new(File::open(&args.model_path).context("Failed to open model file.")?);
     let shaper = Shaper::load(file).context("Error during model loading.")?;
 
     println!("i,x,y");
