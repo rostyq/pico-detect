@@ -1,23 +1,35 @@
 mod tree;
 
+use std::fmt::Debug;
 use std::io::{Error, ErrorKind, Read};
 
 use image::{GenericImageView, Luma};
 
-use crate::traits::Region;
 use crate::geometry::Square;
+use crate::traits::Region;
 
 use super::Detection;
 
 use tree::DetectorTree;
 
 /// Implements object detection using a cascade of decision tree classifiers.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Detector {
     depth: usize,
     dsize: usize,
     threshold: f32,
     forest: Vec<DetectorTree>,
+}
+
+impl Debug for Detector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(stringify!(Detector))
+            .field("depth", &self.depth)
+            .field("dsize", &self.dsize)
+            .field("threshold", &self.threshold)
+            .field("trees", &self.forest.len())
+            .finish()
+    }
 }
 
 impl Detector {
@@ -72,12 +84,10 @@ impl Detector {
         readable.read_exact(&mut buffer)?;
         let depth = i32::from_le_bytes(buffer) as usize;
 
-        let pred_count: usize = match 2usize.checked_pow(depth as u32) {
+        let tree_size: usize = match 2usize.checked_pow(depth as u32) {
             Some(value) => value,
             None => return Err(Error::new(ErrorKind::Other, "depth overflow")),
         };
-        // first node appended from code
-        let node_count = pred_count - 1;
 
         readable.read_exact(&mut buffer)?;
         let ntrees = i32::from_le_bytes(buffer) as usize;
@@ -85,7 +95,7 @@ impl Detector {
         let mut trees: Vec<DetectorTree> = Vec::with_capacity(ntrees);
 
         for _ in 0..ntrees {
-            trees.push(DetectorTree::load(&mut readable, node_count, pred_count)?);
+            trees.push(DetectorTree::load(&mut readable, tree_size)?);
         }
 
         let threshold = trees
@@ -95,7 +105,7 @@ impl Detector {
 
         Ok(Self {
             depth,
-            dsize: pred_count,
+            dsize: tree_size,
             forest: trees,
             threshold,
         })
@@ -110,12 +120,17 @@ mod tests {
 
     #[test]
     fn test_face_detector_model_loading() {
-        let facefinder = Detector::load(
+        let facefinder = dbg!(Detector::load(
             include_bytes!("../../../models/face.detector.bin")
                 .to_vec()
                 .as_slice(),
         )
-        .expect("parsing failed");
+        .expect("parsing failed"));
+
+        // for tree in facefinder.forest.iter() {
+        //     println!("{:?}", tree);
+        // }
+
         assert_eq!(6, facefinder.depth);
         assert_eq!(468, facefinder.forest.len());
 
@@ -135,7 +150,13 @@ mod tests {
 
         assert_abs_diff_eq!(facefinder.forest[0].predictions[0], -0.7820115089416504f32);
         assert_abs_diff_eq!(
-            *facefinder.forest.last().unwrap().predictions.last().unwrap(),
+            *facefinder
+                .forest
+                .last()
+                .unwrap()
+                .predictions
+                .last()
+                .unwrap(),
             0.07058460265398026f32
         );
     }

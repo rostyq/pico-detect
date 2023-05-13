@@ -3,21 +3,35 @@ mod forest;
 mod tree;
 mod utils;
 
-use std::io::{Error, ErrorKind, Read};
+use std::{
+    fmt::Debug,
+    io::{Error, ErrorKind, Read},
+};
 
 use image::{GenericImageView, Luma};
 use imageproc::rect::Rect;
-use nalgebra::{Affine2, DimName, Matrix3, Point2, U2, SimilarityMatrix2};
+use nalgebra::{Affine2, DimName, Matrix3, Point2, SimilarityMatrix2, U2};
 
 use forest::ShaperForest;
 
 /// Implements object alignment using an ensemble of regression trees.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Shaper {
     depth: usize,
     dsize: usize,
     shape: Vec<Point2<f32>>,
     forests: Vec<ShaperForest>,
+}
+
+impl Debug for Shaper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(stringify!(Shaper))
+            .field("depth", &self.depth)
+            .field("dsize", &self.dsize)
+            .field("shape", &self.shape.len())
+            .field("forests", &self.forests.len())
+            .finish()
+    }
 }
 
 impl Shaper {
@@ -78,7 +92,7 @@ impl Shaper {
                 nodes_count,
                 shifts_count,
                 shape_size,
-                nfeatures
+                nfeatures,
             )?);
         }
 
@@ -113,12 +127,8 @@ impl Shaper {
         for forest in self.forests.iter() {
             let transform_to_shape = Self::find_transform(self, shape.as_slice());
 
-            let features = forest.extract_features(
-                image,
-                &transform_to_shape,
-                &transform_to_image,
-                &shape,
-            );
+            let features =
+                forest.extract_features(image, &transform_to_shape, &transform_to_image, &shape);
 
             for tree in forest.trees_slice().iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
@@ -175,12 +185,12 @@ mod tests {
 
     #[test]
     fn test_face_landmarks_model_loading() {
-        let shaper = Shaper::load(
+        let shaper = dbg!(Shaper::load(
             include_bytes!("../../models/face-5.shaper.bin")
                 .to_vec()
                 .as_slice(),
         )
-        .expect("parsing failed");
+        .expect("parsing failed"));
 
         assert_eq!(shaper.forests.len(), 15);
         assert_eq!(shaper.forests[0].trees(), 500);

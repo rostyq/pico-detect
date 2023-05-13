@@ -1,13 +1,25 @@
 use core::mem::size_of;
-use std::io::{Error, Read};
+use std::{
+    fmt::Debug,
+    io::{Error, Read},
+};
 
 use crate::nodes::ComparisonNode;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DetectorTree {
     pub(super) threshold: f32,
     pub(super) predictions: Vec<f32>,
     pub(super) nodes: Vec<ComparisonNode>,
+}
+
+impl Debug for DetectorTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(stringify!(DetectorTree))
+            .field("threshold", &self.threshold)
+            .field("size", &self.predictions.len())
+            .finish()
+    }
 }
 
 impl DetectorTree {
@@ -43,18 +55,10 @@ impl DetectorTree {
     #[inline]
     pub(super) fn load(
         mut readable: impl Read,
-        node_count: usize,
-        prediction_count: usize,
+        size: usize,
     ) -> Result<Self, Error> {
-        let nodes = Self::load_nodes(
-            readable.by_ref(),
-            node_count,
-        )?;
-
-        let predictions = Self::load_predictions(
-            readable.by_ref(),
-            prediction_count,
-        )?;
+        let nodes = Self::load_nodes(readable.by_ref(), size - 1)?;
+        let predictions = Self::load_predictions(readable.by_ref(), size)?;
 
         let mut buffer: [u8; 4] = [0u8; 4];
         readable.read_exact(&mut buffer)?;
