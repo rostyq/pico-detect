@@ -32,6 +32,14 @@ where
 }
 
 #[inline]
+pub fn get_luma_by_point<I, T: Copy>(image: &I, point: Point2<i64>) -> Option<T>
+where
+    I: GenericImageView<Pixel = Luma<T>>,
+{
+    get_pixel_i64(image, point.x, point.y).map(|p| p.0[0])
+}
+
+#[inline]
 pub fn image_bounds_as_i64<I>(image: &I) -> (i64, i64, i64, i64)
 where
     I: GenericImageView,

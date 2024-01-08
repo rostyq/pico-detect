@@ -3,7 +3,7 @@ mod macros;
 
 use std::fmt::Display;
 
-use criterion::{black_box, criterion_group, BenchmarkId, Criterion, Throughput};
+use criterion::{black_box, BenchmarkId, Criterion, Throughput};
 
 use imageproc::rect::Rect;
 use pico_detect::multiscale::Multiscaler;
@@ -29,7 +29,7 @@ impl From<(u32, u32)> for Size {
     }
 }
 
-fn bench_multiscale_run(c: &mut Criterion) {
+pub fn bench_run(c: &mut Criterion) {
     static SIZES: &[(u32, u32)] = &[
         (320, 240),
         (480, 360),
@@ -39,6 +39,8 @@ fn bench_multiscale_run(c: &mut Criterion) {
     ];
 
     let mut group = c.benchmark_group("Multiscaler::run");
+
+    group.sample_size(10000);
 
     for size in SIZES.iter().map(|s| Size::from(*s)) {
         let ms = Multiscaler::builder()
@@ -64,5 +66,3 @@ fn bench_multiscale_run(c: &mut Criterion) {
 
     group.finish();
 }
-
-criterion_group!(benches, bench_multiscale_run);

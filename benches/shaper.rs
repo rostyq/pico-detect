@@ -3,12 +3,12 @@ mod macros;
 
 use std::fs;
 
-use criterion::{black_box, criterion_group, Criterion};
+use criterion::{black_box, Criterion};
 
 use image;
 use pico_detect::{Shaper, Square};
 
-fn bench_shaper_load(c: &mut Criterion) {
+pub fn bench_load(c: &mut Criterion) {
     let model_data = fs::read(model_path!(shaper)).unwrap();
 
     c.bench_function("Shaper::load", |b| {
@@ -16,15 +16,13 @@ fn bench_shaper_load(c: &mut Criterion) {
     });
 }
 
-fn bench_shaper_shape(c: &mut Criterion) {
+pub fn bench_inference(c: &mut Criterion) {
     let image = load_test_image!();
     let shaper = load_model!(shaper);
 
     let r = Square::new(213, 225, 153).into();
 
-    c.bench_function("Shaper::shape", |b| {
+    c.bench_function("Shaper::shape[inference]", |b| {
         b.iter(|| shaper.shape(black_box(&image), black_box(r)));
     });
 }
-
-criterion_group!(benches, bench_shaper_load, bench_shaper_shape);
