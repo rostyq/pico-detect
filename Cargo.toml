@@ -53,6 +53,7 @@ path = "benches/lib.rs"
 
 [[example]]
 name = "detect-faces"
+path = "examples/detect-faces/main.rs"
 
 # uncomment for debugging
 # [profile.release]
