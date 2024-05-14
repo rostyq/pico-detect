@@ -52,7 +52,7 @@ impl Localizer {
 
         for stage in self.stages.iter() {
             let mut translation = Translation2::identity();
-            let p = Point2::new(point.x as i64, point.y as i64);
+            let p = unsafe { point.coords.try_cast::<i32>().unwrap_unchecked() }.into();
             let s = size as u32;
 
             for (codes, preds) in stage.iter() {

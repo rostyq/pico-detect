@@ -43,11 +43,7 @@ pub fn bench_run(c: &mut Criterion) {
     group.sample_size(10000);
 
     for size in SIZES.iter().map(|s| Size::from(*s)) {
-        let ms = Multiscaler::builder()
-            .min_size(100)
-            .max_size(size.height)
-            .build()
-            .unwrap();
+        let ms = Multiscaler::new(100, size.height, 0.1, 1.1).unwrap();
 
         let id = BenchmarkId::from_parameter(size);
 

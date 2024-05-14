@@ -51,8 +51,8 @@ impl Shape5 {
         let rh = rs / 2.0;
 
         (
-            Square::new((l.x - lh) as i64, (l.y - lh) as i64, ls as u32),
-            Square::new((r.x - rh) as i64, (r.y - rh) as i64, rs as u32),
+            Square::new((l.x - lh) as i32, (l.y - lh) as i32, ls as u32),
+            Square::new((r.x - rh) as i32, (r.y - rh) as i32, rs as u32),
         )
     }
 }

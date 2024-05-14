@@ -1,7 +1,7 @@
 use image::{GenericImageView, Luma};
 use nalgebra::Point2;
 
-use crate::imageutils::get_nearest_luma_by_point;
+use pixelutil_image::clamp_pixel_unchecked;
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);
@@ -46,40 +46,40 @@ impl ComparisonNode {
     pub fn bintest<I: GenericImageView<Pixel = Luma<u8>>>(
         &self,
         image: &I,
-        point: Point2<i64>,
+        point: Point2<i32>,
         size: u32,
     ) -> bool {
         let p0 = transform(point, size, self.0.cast());
         let p1 = transform(point, size, self.1.cast());
 
-        let lum0 = get_nearest_luma_by_point(image, p0);
-        let lum1 = get_nearest_luma_by_point(image, p1);
+        let lum0 = unsafe { clamp_pixel_unchecked(image, p0.x, p0.y) }.0[0];
+        let lum1 = unsafe { clamp_pixel_unchecked(image, p1.x, p1.y) }.0[0];
 
         lum0 > lum1
     }
 }
 
 #[allow(dead_code)]
-const SCALE: i64 = u8::MAX as i64 + 1;
+const SCALE: i32 = u8::MAX as i32 + 1;
 const SHIFT: i32 = 8;
 
 #[allow(dead_code)]
 #[inline]
-fn na_transform(i: Point2<i64>, s: u32, n: Point2<i64>) -> Point2<i64> {
-    (i * SCALE + n.coords * (s as i64)) / SCALE
+fn na_transform(i: Point2<i32>, s: u32, n: Point2<i32>) -> Point2<i32> {
+    (i * SCALE + n.coords * (s as i32)) / SCALE
 }
 
 #[inline]
-fn transform(i: Point2<i64>, s: u32, n: Point2<i64>) -> Point2<i64> {
-    let (x, y) = original_transform(i.x, i.y, s, n.x, n.y);
+fn transform(i: Point2<i32>, s: u32, n: Point2<i32>) -> Point2<i32> {
+    let (x, y) = original_transform(i.x, i.y, s as i32, n.x, n.y);
     Point2::new(x, y)
 }
 
 #[allow(dead_code)]
 #[inline]
-fn original_transform(ix: i64, iy: i64, s: u32, nx: i64, ny: i64) -> (i64, i64) {
-    let x = ((ix << SHIFT) + nx * (s as i64)) >> SHIFT;
-    let y = ((iy << SHIFT) + ny * (s as i64)) >> SHIFT;
+fn original_transform(ix: i32, iy: i32, s: i32, nx: i32, ny: i32) -> (i32, i32) {
+    let x = ((ix << SHIFT) + nx * s) >> SHIFT;
+    let y = ((iy << SHIFT) + ny * s) >> SHIFT;
     (x, y)
 }
 

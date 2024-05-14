@@ -98,13 +98,7 @@ pub fn shaper_case(test_image: GrayImage) -> (GrayImage, Square, Vec<Point2<f32>
 
 #[fixture]
 pub fn multiscaler(test_image: GrayImage) -> Multiscaler {
-    Multiscaler::builder()
-        .min_size(100)
-        .max_size(test_image.width())
-        .shift_factor(0.05)
-        .scale_factor(1.1)
-        .build()
-        .unwrap()
+    Multiscaler::new(100, test_image.width(), 0.05, 1.1).unwrap()
 }
 
 #[fixture]

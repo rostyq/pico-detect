@@ -1,10 +1,10 @@
+use ab_glyph::FontRef;
 use image::{Rgb, RgbImage};
 use imageproc::drawing;
-use rusttype::{Font, Scale};
 
 use crate::face::Face;
 
-pub fn draw_face(image: &mut RgbImage, face: &Face, font: &Font, scale: Scale) {
+pub fn draw_face(image: &mut RgbImage, face: &Face, font: &FontRef<'_>, scale: f32) {
     drawing::draw_hollow_rect_mut(image, face.region.into(), Rgb([0, 0, 255]));
 
     let color = Rgb([0, 255, 0]);

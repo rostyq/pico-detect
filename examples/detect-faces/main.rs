@@ -12,16 +12,18 @@ mod utils;
 use rand::SeedableRng;
 use rand_xoshiro::Xoroshiro128PlusPlus;
 
-use anyhow::{anyhow, Context, Result};
+use ab_glyph::FontRef;
+use anyhow::{Context, Result};
 
 use face::Face;
 use shape::Shape5;
 use utils::{draw_face, print_faces_data};
 
-use rusttype::{Font, Scale};
-
 fn main() -> Result<()> {
     let args = args::parse();
+
+    let font = FontRef::try_from_slice(include_bytes!("../../assets/DejaVuSansDigits.ttf"))
+        .expect("Failed to load font.");
 
     let image = image::open(&args.input).context("Failed to load image file.")?;
 
@@ -59,23 +61,11 @@ fn main() -> Result<()> {
 
     let mut rgb = image.into_rgb8();
 
-    let height = 12.0;
-    let scale = Scale {
-        x: height,
-        y: height,
-    };
-    let font = load_font()?;
-
     for face in faces.iter() {
-        draw_face(&mut rgb, &face, &font, scale);
+        draw_face(&mut rgb, &face, &font, 12.0);
     }
 
     rgb.save(args.output).context("Cannot write output image")?;
 
     Ok(())
-}
-
-fn load_font<'a>() -> Result<Font<'a>> {
-    Font::try_from_bytes(include_bytes!("../../assets/DejaVuSansDigits.ttf"))
-        .ok_or(anyhow!("Cannot load font."))
 }

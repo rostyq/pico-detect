@@ -25,10 +25,10 @@ struct Args {
     image_path: PathBuf,
 
     #[arg(long, default_value_t = 0)]
-    top: i64,
+    top: i32,
 
     #[arg(long, default_value_t = 0)]
-    left: i64,
+    left: i32,
 
     #[arg(long)]
     size: Option<u32>,
@@ -60,14 +60,14 @@ fn main() -> Result<()> {
         ModelType::Localizer => {
             let localizer = Localizer::load(file)?;
             let point = localizer.localize(&image, square.into());
-            println!("{},{}", point.x as i64, point.y as i64);
+            println!("{},{}", point.x as i32, point.y as i32);
         }
         ModelType::Shaper => {
             let shaper = Shaper::load(file)?;
             let shape = shaper.shape(&image, square.into());
             println!("i,x,y");
             for (i, point) in shape.iter().enumerate() {
-                println!("{},{},{}", i, point.x as i64, point.y as i64);
+                println!("{},{},{}", i, point.x as i32, point.y as i32);
             }
         }
     }

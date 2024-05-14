@@ -4,14 +4,14 @@ use crate::traits::region::Region;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Square {
-    pub(crate) left: i64,
-    pub(crate) top: i64,
+    pub(crate) left: i32,
+    pub(crate) top: i32,
     pub(crate) size: u32,
 }
 
 impl Square {
     #[inline]
-    pub fn at(x: i64, y: i64) -> Self {
+    pub fn at(x: i32, y: i32) -> Self {
         Self {
             left: x,
             top: y,
@@ -39,7 +39,7 @@ impl Square {
     }
 
     #[inline]
-    pub fn new(left: i64, top: i64, size: u32) -> Self {
+    pub fn new(left: i32, top: i32, size: u32) -> Self {
         Self { left, top, size }
     }
 
@@ -51,12 +51,12 @@ impl Square {
 
 impl Region for Square {
     #[inline]
-    fn left(&self) -> i64 {
+    fn left(&self) -> i32 {
         self.left
     }
 
     #[inline]
-    fn top(&self) -> i64 {
+    fn top(&self) -> i32 {
         self.top
     }
 
@@ -76,14 +76,14 @@ impl Region for Square {
     }
 }
 
-impl From<(i64, i64, u32)> for Square {
-    fn from(value: (i64, i64, u32)) -> Self {
+impl From<(i32, i32, u32)> for Square {
+    fn from(value: (i32, i32, u32)) -> Self {
         Self::new(value.0, value.1, value.2)
     }
 }
 
 impl From<Square> for Rect {
     fn from(value: Square) -> Self {
-        Self::at(value.left as i32, value.top as i32).of_size(value.size, value.size)
+        Self::at(value.left, value.top).of_size(value.size, value.size)
     }
 }

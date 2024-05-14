@@ -3,8 +3,7 @@ use std::io::{Error, Read};
 
 use image::{GenericImageView, Luma};
 use nalgebra::{Affine2, Point2, SimilarityMatrix2};
-
-use crate::imageutils::get_luma_by_point_f32;
+use pixelutil_image::get_pixel;
 
 use super::delta::ShaperDelta;
 use super::tree::ShaperTree;
@@ -53,8 +52,9 @@ impl ShaperForest {
                 let point = unsafe { shape.get_unchecked(delta.anchor()) };
                 let point = point + transform_to_shape.transform_vector(delta.value());
                 let point = transform_to_image * point;
+                let point = unsafe { point.coords.try_cast::<i32>().unwrap_unchecked() };
 
-                get_luma_by_point_f32(image, point).unwrap_or(0u8)
+                get_pixel(image, point.x, point.y).map(|p| p.0[0]).unwrap_or(0u8)
             })
             .collect()
     }

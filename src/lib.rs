@@ -12,7 +12,6 @@ extern crate derive_builder;
 extern crate approx;
 
 mod geometry;
-mod imageutils;
 mod nodes;
 mod traits;
 

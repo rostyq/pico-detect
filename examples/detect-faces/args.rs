@@ -75,17 +75,13 @@ impl Args {
     pub fn init(&self, image: &DynamicImage) -> Result<(DetectMultiscale, LocalizePerturbate)> {
         Ok((
             DetectMultiscale::builder()
-                .multiscaler(
-                    Multiscaler::builder()
-                        .min_size(self.min_size)
-                        .scale_factor(self.scale_factor)
-                        .shift_factor(self.shift_factor)
-                        .max_size(
-                            self.max_size
-                                .unwrap_or_else(|| image.height().min(image.width())),
-                        )
-                        .build()?,
-                )
+                .multiscaler(Multiscaler::new(
+                    self.min_size,
+                    self.max_size
+                        .unwrap_or_else(|| image.height().min(image.width())),
+                    self.scale_factor,
+                    self.shift_factor,
+                )?)
                 .clusterizer(Clusterizer {
                     intersection_threshold: self.intersection_threshold,
                     score_threshold: self.score_threshold,

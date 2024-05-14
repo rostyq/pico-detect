@@ -43,13 +43,13 @@ impl Target {
 
 impl Region for Target {
     #[inline]
-    fn left(&self) -> i64 {
-        (self.point.x - self.size / 2.0) as i64
+    fn left(&self) -> i32 {
+        (self.point.x - self.size / 2.0) as i32
     }
 
     #[inline]
-    fn top(&self) -> i64 {
-        (self.point.y - self.size / 2.0) as i64
+    fn top(&self) -> i32 {
+        (self.point.y - self.size / 2.0) as i32
     }
 
     #[inline]
@@ -68,15 +68,15 @@ impl Region for Target {
     }
 
     #[inline]
-    fn center(&self) -> Point2<i64> {
-        Point2::new(self.x() as i64, self.y() as i64)
+    fn center(&self) -> Point2<i32> {
+        Point2::new(self.x() as i32, self.y() as i32)
     }
 }
 
 impl From<Target> for Rect {
     #[inline]
     fn from(value: Target) -> Self {
-        Self::at(value.left() as i32, value.top() as i32).of_size(value.width(), value.height())
+        Self::at(value.left(), value.top()).of_size(value.width(), value.height())
     }
 }
 
