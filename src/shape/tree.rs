@@ -24,13 +24,13 @@ impl ShaperTree {
     }
 
     #[inline]
-    pub fn node(&self, index: usize) -> &ThresholdNode {
-        unsafe { self.nodes.get_unchecked(index) }
+    pub unsafe fn node_unchecked(&self, index: usize) -> &ThresholdNode {
+        self.nodes.get_unchecked(index)
     }
 
     #[inline]
-    pub fn shift(&self, index: usize) -> &Vec<Vector2<f32>> {
-        unsafe { self.shifts.get_unchecked(index) }
+    pub unsafe fn shift_unchecked(&self, index: usize) -> &Vec<Vector2<f32>> {
+        self.shifts.get_unchecked(index)
     }
 
     #[inline(always)]

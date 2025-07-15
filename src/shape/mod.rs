@@ -132,14 +132,17 @@ impl Shaper {
 
             for tree in forest.trees_slice().iter() {
                 let idx = (0..self.depth).fold(0, |idx, _| {
-                    2 * idx + 1 + tree.node(idx).bintest(features.as_slice()) as usize
+                    2 * idx
+                        + 1
+                        + unsafe { tree.node_unchecked(idx) }.bintest(features.as_slice()) as usize
                 }) - self.dsize;
 
-                shape.iter_mut().zip(tree.shift(idx).iter()).for_each(
-                    |(shape_point, shift_vector)| {
+                shape
+                    .iter_mut()
+                    .zip(unsafe { tree.shift_unchecked(idx) }.iter())
+                    .for_each(|(shape_point, shift_vector)| {
                         *shape_point += shift_vector;
-                    },
-                );
+                    });
             }
         }
 
