@@ -1,7 +1,7 @@
 mod tree;
 
 use std::fmt::Debug;
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Error, Read};
 
 use image::{GenericImageView, Luma};
 
@@ -86,7 +86,7 @@ impl Detector {
 
         let tree_size: usize = match 2usize.checked_pow(depth as u32) {
             Some(value) => value,
-            None => return Err(Error::new(ErrorKind::Other, "depth overflow")),
+            None => return Err(Error::other("depth overflow")),
         };
 
         readable.read_exact(&mut buffer)?;
@@ -100,7 +100,7 @@ impl Detector {
 
         let threshold = trees
             .last()
-            .ok_or(Error::new(ErrorKind::Other, "No trees"))?
+            .ok_or(Error::other("No trees"))?
             .threshold;
 
         Ok(Self {

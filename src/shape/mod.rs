@@ -104,12 +104,12 @@ impl Shaper {
         })
     }
 
+    // TODO:
     /// Estimate object shape on the image
     ///
     /// ### Arguments
     ///
     /// * `image` - Target image.
-    /// TODO:
     ///
     /// ### Returns
     ///

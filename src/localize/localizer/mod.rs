@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Error, Read};
 
 use image::{GenericImageView, Luma};
 use nalgebra::{Point2, Translation2, Vector2};
@@ -34,12 +34,12 @@ impl Debug for Localizer {
 }
 
 impl Localizer {
+    // TODO:
     /// Estimate object location on the image
     ///
     /// ### Arguments
     ///
     /// * `image` - Target image.
-    /// TODO
     #[inline]
     pub fn localize<I>(&self, image: &I, roi: Target) -> Point2<f32>
     where
@@ -89,7 +89,7 @@ impl Localizer {
         let depth = i32::from_le_bytes(buffer) as usize;
         let pred_size: usize = match 2usize.checked_pow(depth as u32) {
             Some(value) => value,
-            None => return Err(Error::new(ErrorKind::Other, "depth overflow")),
+            None => return Err(Error::other("depth overflow")),
         };
         let code_size = pred_size - 1;
 
