@@ -1,5 +1,12 @@
-use rand::distributions::Uniform;
-use rand::{Rng, RngCore};
+use std::{
+    convert::{TryFrom, TryInto},
+    ops::Range,
+};
+
+use rand::{
+    distr::{uniform::Error, Uniform},
+    Rng, RngCore,
+};
 
 use crate::geometry::Target;
 
@@ -9,12 +16,23 @@ pub struct Perturbator {
     pub translate: Uniform<f32>,
 }
 
+impl Perturbator {
+    /// Creates a new perturbator with the specified scale and translation ranges.
+    #[inline]
+    pub fn from_ranges(scale: Range<f32>, translate: Range<f32>) -> Result<Self, Error> {
+        Ok(Self {
+            scale: scale.try_into()?,
+            translate: translate.try_into()?,
+        })
+    }
+}
+
 impl Default for Perturbator {
     #[inline]
     fn default() -> Self {
         Self {
-            scale: Uniform::new(0.925, 0.94),
-            translate: Uniform::new(-0.075, 0.075),
+            scale: Uniform::try_from(0.925..0.94).unwrap(),
+            translate: Uniform::try_from(-0.075..0.075).unwrap(),
         }
     }
 }

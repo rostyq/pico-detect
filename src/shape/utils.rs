@@ -5,7 +5,7 @@ use nalgebra::{allocator::Allocator, DefaultAllocator, Dim, Dyn, OMatrix, Uninit
 #[inline]
 pub fn read_shape<R: Read>(mut reader: R, size: usize) -> Result<OMatrix<f32, U2, Dyn>, Error>
 where
-    DefaultAllocator: Allocator<f32, U2, Dyn>,
+    DefaultAllocator: Allocator<U2, Dyn>,
 {
     let mut m = UninitMatrix::<f32, U2, Dyn>::uninit(U2, Dyn::from_usize(size));
 
