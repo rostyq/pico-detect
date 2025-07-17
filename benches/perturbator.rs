@@ -1,7 +1,9 @@
 #[path = "./common/macros.rs"]
 mod macros;
 
-use criterion::{black_box, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
+
+use criterion::{BenchmarkId, Criterion, Throughput};
 
 use pico_detect::{Square, perturbate::Perturbator};
 use rand::SeedableRng;

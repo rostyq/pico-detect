@@ -1,9 +1,9 @@
 #[path = "./common/macros.rs"]
 mod macros;
 
-use std::fmt::Display;
+use std::{fmt::Display, hint::black_box};
 
-use criterion::{black_box, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput};
 
 use imageproc::rect::Rect;
 use pico_detect::multiscale::Multiscaler;

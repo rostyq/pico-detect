@@ -1,9 +1,9 @@
 #[path = "./common/macros.rs"]
 mod macros;
 
-use std::time::Duration;
+use std::{time::Duration, hint::black_box};
 
-use criterion::{black_box, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput};
 
 use rand::prelude::*;
 

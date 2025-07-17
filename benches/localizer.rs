@@ -1,9 +1,9 @@
 #[path = "./common/macros.rs"]
 mod macros;
 
-use std::fs;
+use std::{fs, hint::black_box};
 
-use criterion::{black_box, Criterion};
+use criterion::Criterion;
 
 use image;
 use pico_detect::{Localizer, Square};
