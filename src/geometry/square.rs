@@ -2,6 +2,7 @@ use imageproc::rect::Rect;
 
 use crate::traits::region::Region;
 
+/// Represents a square region in an image with a left, top coordinates and size.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Square {
     pub(crate) left: i32,
@@ -10,6 +11,7 @@ pub struct Square {
 }
 
 impl Square {
+    /// Creates a square at the specified coordinates with unit size.
     #[inline]
     pub fn at(x: i32, y: i32) -> Self {
         Self {
@@ -19,30 +21,30 @@ impl Square {
         }
     }
 
+    /// Sets the size of the square.
     #[inline]
     pub fn of_size(mut self, value: u32) -> Self {
         self.size = value;
         self
     }
 
+    /// Creates a square from a region if it is square.
     #[inline]
-    pub fn from_region<T: Region>(value: T) -> Result<Self, String> {
-        if value.is_square() {
-            Ok(Self {
-                left: value.left(),
-                top: value.top(),
-                size: value.width(),
-            })
-        } else {
-            Err("Region is not a square".into())
-        }
+    pub fn from_region<T: Region>(value: T) -> Option<Self> {
+        value.is_square().then(|| Self {
+            left: value.left(),
+            top: value.top(),
+            size: value.width(),
+        })
     }
 
+    /// Creates a new square with the specified left, top coordinates and size.
     #[inline]
     pub fn new(left: i32, top: i32, size: u32) -> Self {
         Self { left, top, size }
     }
 
+    /// Returns the size of the square.
     #[inline]
     pub fn size(&self) -> u32 {
         self.size

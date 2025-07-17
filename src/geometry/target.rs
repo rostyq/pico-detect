@@ -5,6 +5,7 @@ use crate::traits::Region;
 
 use super::Square;
 
+/// Represents a target region in an image with a center point and size.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Target {
     pub(crate) point: Point2<f32>,
@@ -12,6 +13,7 @@ pub struct Target {
 }
 
 impl Target {
+    /// Creates a new target with the specified center point and size.
     #[inline]
     pub fn new(x: f32, y: f32, s: f32) -> Self {
         Self {
@@ -20,21 +22,25 @@ impl Target {
         }
     }
 
+    /// Returns size of the target.
     #[inline]
     pub fn size(&self) -> f32 {
         self.size
     }
 
+    /// Returns the `x` coordinate of the target's center point.
     #[inline]
     pub fn x(&self) -> f32 {
         self.point.x
     }
 
+    /// Returns the `y` coordinate of the target's center point.
     #[inline]
     pub fn y(&self) -> f32 {
         self.point.y
     }
 
+    /// Returns the center point of the target.
     #[inline]
     pub fn point(&self) -> &Point2<f32> {
         &self.point

@@ -2,6 +2,9 @@ use std::cmp::{min, max};
 
 use crate::traits::Region;
 
+/// Calculates the intersection over union (IoU) of two regions.
+/// 
+/// Returns `None` if the regions do not overlap, otherwise returns the IoU as a `f32`.
 #[inline]
 pub fn intersection_over_union<R: Region>(r1: R, r2: R) -> Option<f32> {
     let left = max(r1.left(), r2.left());

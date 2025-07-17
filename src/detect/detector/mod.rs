@@ -38,6 +38,7 @@ impl Detector {
     /// ### Arguments
     ///
     /// * `image` -- target image;
+    /// * `region` -- rectangular region to classify.
     ///
     /// ### Returns
     ///
@@ -65,6 +66,7 @@ impl Detector {
         Some(result - self.threshold)
     }
 
+    /// Detect an object in the rectangular region.
     #[inline]
     pub fn detect<I>(&self, image: &I, region: Square) -> Option<Detection<Square>>
     where

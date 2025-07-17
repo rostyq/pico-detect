@@ -10,13 +10,17 @@ use rand::RngCore;
 
 use crate::Target;
 
+/// Implements object localization with perturbation.
 #[derive(Debug, Clone, Copy)]
 pub struct LocalizePerturbate {
+    /// Perturbator to apply to the target.
     pub perturbator: Perturbator,
+    /// Number of perturbations to run.
     pub runs: usize,
 }
 
 impl Default for LocalizePerturbate {
+    /// Creates with default perturbator and runs count set to 15.
     #[inline]
     fn default() -> Self {
         Self {
@@ -27,6 +31,8 @@ impl Default for LocalizePerturbate {
 }
 
 impl LocalizePerturbate {
+    /// Creates a new instance with the specified number of runs
+    /// with a default perturbator.
     #[inline]
     pub fn new(runs: usize) -> Self {
         Self {
@@ -35,6 +41,7 @@ impl LocalizePerturbate {
         }
     }
 
+    /// Applies perturbations to the target and runs the localizer on each perturbed target.
     #[inline]
     pub fn run<R, I>(
         &self,

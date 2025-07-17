@@ -40,6 +40,7 @@ impl Localizer {
     /// ### Arguments
     ///
     /// * `image` - Target image.
+    /// * `roi` - Region of interest, which is the initial guess of the object location.
     #[inline]
     pub fn localize<I>(&self, image: &I, roi: Target) -> Point2<f32>
     where

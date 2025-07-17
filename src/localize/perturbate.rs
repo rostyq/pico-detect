@@ -11,6 +11,7 @@ use rand::{
 use crate::geometry::Target;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+/// A perturbator for applying random perturbations to a target's size and position.
 pub struct Perturbator {
     pub scale: Uniform<f32>,
     pub translate: Uniform<f32>,
@@ -28,6 +29,8 @@ impl Perturbator {
 }
 
 impl Default for Perturbator {
+    /// Creates a default perturbator with scale in the range `0.925..0.94` and
+    /// translation in the range `-0.075..0.075`.
     #[inline]
     fn default() -> Self {
         Self {
@@ -38,6 +41,8 @@ impl Default for Perturbator {
 }
 
 impl Perturbator {
+    /// Applies perturbations to a target's size and position, calling the provided closure
+    /// `f` with each perturbed target. See the [`perturbate`] function for more details.
     #[inline]
     pub fn run<R, F>(&self, rng: &mut R, count: usize, init: Target, f: F)
     where
@@ -48,6 +53,16 @@ impl Perturbator {
     }
 }
 
+/// Applies perturbations to a target's size and position, calling the provided closure
+/// `f` with each perturbed target.
+/// 
+/// # Arguments
+/// 
+/// * `rng` - A mutable reference to a random number generator.
+/// * `scale` - A uniform distribution for scaling the target's size.
+/// * `translate` - A uniform distribution for translating the target's position.
+/// * `count` - The number of perturbations to apply.
+/// * `init` - The initial target to perturb.
 #[inline]
 pub fn perturbate<R, F>(
     rng: &mut R,

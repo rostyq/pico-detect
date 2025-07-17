@@ -5,6 +5,7 @@ use super::detection::Detection;
 
 use nalgebra::Point2;
 
+/// Clustering parameters for object detection results.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Clusterizer {
     pub intersection_threshold: f32,
@@ -12,6 +13,7 @@ pub struct Clusterizer {
 }
 
 impl Clusterizer {
+    /// Set the intersection threshold for clustering.
     #[inline]
     pub fn intersection_threshold(self, value: f32) -> Self {
         Self {
@@ -20,6 +22,7 @@ impl Clusterizer {
         }
     }
 
+    /// Set the score threshold for clustering.
     #[inline]
     pub fn score_threshold(self, value: f32) -> Self {
         Self {
@@ -28,6 +31,7 @@ impl Clusterizer {
         }
     }
 
+    /// Run clustering on the provided detection data.
     #[inline]
     pub fn clusterize(&self, data: &mut [Detection<Square>], dest: &mut Vec<Detection<Target>>) {
         clusterize(
@@ -40,6 +44,8 @@ impl Clusterizer {
 }
 
 impl Default for Clusterizer {
+    /// Create a default clusterizer with intersection threshold of 0.7
+    /// and score threshold of 0.0.
     #[inline]
     fn default() -> Self {
         Self {
@@ -49,6 +55,14 @@ impl Default for Clusterizer {
     }
 }
 
+/// Clusterize detection results based on intersection and score thresholds.
+/// 
+/// ### Arguments
+/// 
+/// * `data` -- mutable slice of detection data to clusterize;
+/// * `intersection_threshold` -- threshold for intersection over union;
+/// * `score_threshold` -- threshold for detection score;
+/// * `dest` -- destination vector to store clustered detections. 
 #[inline]
 pub fn clusterize<R: Region + Copy>(
     data: &mut [Detection<R>],

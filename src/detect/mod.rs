@@ -17,22 +17,29 @@ pub use detection::Detection;
 pub use detector::Detector;
 pub use padding::Padding;
 
+/// Utility for running multiscale detection with clustering and padding
+/// using [`Detector`].
 #[derive(Debug, Clone, Copy, Builder)]
 #[builder]
 pub struct DetectMultiscale {
+    /// Multiscale detection parameters.
     pub multiscaler: Multiscaler,
+    /// Clustering parameters.
     #[builder(default)]
     pub clusterizer: Clusterizer,
+    /// Padding parameters.
     #[builder(default)]
     pub padding: Padding,
 }
 
 impl DetectMultiscale {
+    /// Create default builder struct.
     #[inline]
     pub fn builder() -> DetectMultiscaleBuilder {
         Default::default()
     }
 
+    /// Run multiscale detection with clustering and padding on the specified image.
     #[inline]
     pub fn run<I>(&self, detector: &Detector, image: &I) -> Vec<Detection<Target>>
     where

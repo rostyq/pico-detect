@@ -8,6 +8,7 @@ pub struct Detection<R: Region> {
 }
 
 impl<R: Region> Detection<R> {
+    /// Create a new detection with the specified region and score.
     #[inline]
     pub fn new(region: R, score: f32) -> Self {
         assert!(score > 0.0);
