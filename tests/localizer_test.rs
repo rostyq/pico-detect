@@ -6,9 +6,9 @@ use rstest::rstest;
 
 use nalgebra::Point2;
 
-use common::{localize_case, localize_perturbate_case, localizer, localize_perturbate, rng};
+use common::{localize_case, localize_perturbate, localize_perturbate_case, localizer, rng};
 
-use pico_detect::{Localizer, Square, LocalizePerturbate};
+use pico_detect::{LocalizePerturbate, Localizer, Square};
 
 #[rstest]
 fn test_localizer_localize(

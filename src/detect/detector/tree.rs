@@ -53,10 +53,7 @@ impl DetectorTree {
     }
 
     #[inline]
-    pub(super) fn load(
-        mut readable: impl Read,
-        size: usize,
-    ) -> Result<Self, Error> {
+    pub(super) fn load(mut readable: impl Read, size: usize) -> Result<Self, Error> {
         let nodes = Self::load_nodes(readable.by_ref(), size - 1)?;
         let predictions = Self::load_predictions(readable.by_ref(), size)?;
 

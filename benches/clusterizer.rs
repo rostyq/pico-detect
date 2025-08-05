@@ -1,7 +1,7 @@
 #[path = "./common/macros.rs"]
 mod macros;
 
-use std::{time::Duration, hint::black_box};
+use std::{hint::black_box, time::Duration};
 
 use criterion::{BenchmarkId, Criterion, Throughput};
 

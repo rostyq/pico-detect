@@ -5,7 +5,7 @@ use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion, Throughput};
 
-use pico_detect::{Square, perturbate::Perturbator};
+use pico_detect::{perturbate::Perturbator, Square};
 use rand::SeedableRng;
 use rand_xoshiro::Xoroshiro128PlusPlus;
 

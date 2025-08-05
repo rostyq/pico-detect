@@ -26,9 +26,9 @@ pub enum MultiscalerError {
 
 impl Multiscaler {
     /// Create a new multiscale detector with specified parameters.
-    /// 
+    ///
     /// ### Arguments
-    /// 
+    ///
     /// * `min_size` -- minimum size of the square region to detect;
     /// * `max_size` -- maximum size of the square region to detect;
     /// * `shift_factor` -- factor to shift the detection window;
@@ -85,9 +85,9 @@ impl Multiscaler {
     }
 
     /// Run multiscale detection on the specified rectangle.
-    /// 
+    ///
     /// ### Arguments
-    /// 
+    ///
     /// * `rect` -- rectangle to run detection on;
     /// * `f` -- function to call for each generated square region.
     #[inline]
@@ -125,9 +125,9 @@ impl Multiscaler {
 }
 
 /// Run multiscale detection on the specified rectangle.
-/// 
+///
 /// ### Arguments
-/// 
+///
 /// * `min_size` -- minimum size of the square region to detect;
 /// * `max_size` -- maximum size of the square region to detect;
 /// * `shift_factor` -- factor to shift the detection window;

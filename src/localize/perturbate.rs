@@ -55,9 +55,9 @@ impl Perturbator {
 
 /// Applies perturbations to a target's size and position, calling the provided closure
 /// `f` with each perturbed target.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `rng` - A mutable reference to a random number generator.
 /// * `scale` - A uniform distribution for scaling the target's size.
 /// * `translate` - A uniform distribution for translating the target's position.

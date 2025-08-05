@@ -1,6 +1,7 @@
 use std::{
     fs::File,
-    path::{Path, PathBuf}, io::BufReader,
+    io::BufReader,
+    path::{Path, PathBuf},
 };
 
 use rstest::fixture;
@@ -12,7 +13,7 @@ use rand_xoshiro::Xoroshiro128PlusPlus;
 
 use pico_detect::{
     clusterize::Clusterizer, multiscale::Multiscaler, DetectMultiscale, Detector,
-    Localizer, Padding, Shaper, Square, Target, LocalizePerturbate,
+    LocalizePerturbate, Localizer, Padding, Shaper, Square, Target,
 };
 
 #[fixture]

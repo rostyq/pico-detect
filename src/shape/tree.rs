@@ -47,7 +47,11 @@ impl ShaperTree {
     }
 
     #[inline(always)]
-    fn load_shifts<R: Read>(mut reader: R, count: usize, size: usize) -> Result<Vec<Vec<Vector2<f32>>>, Error> {
+    fn load_shifts<R: Read>(
+        mut reader: R,
+        count: usize,
+        size: usize,
+    ) -> Result<Vec<Vec<Vector2<f32>>>, Error> {
         let mut shifts = Vec::with_capacity(count);
 
         for _ in 0..count {
@@ -62,7 +66,12 @@ impl ShaperTree {
     }
 
     #[inline]
-    pub fn load<R: Read>(mut reader: R, nodes: usize, shifts: usize, shape: usize) -> Result<Self, Error> {
+    pub fn load<R: Read>(
+        mut reader: R,
+        nodes: usize,
+        shifts: usize,
+        shape: usize,
+    ) -> Result<Self, Error> {
         Ok(Self {
             nodes: Self::load_nodes(reader.by_ref(), nodes)?,
             shifts: Self::load_shifts(reader.by_ref(), shifts, shape)?,

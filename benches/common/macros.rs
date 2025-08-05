@@ -30,13 +30,11 @@ macro_rules! model_file {
     };
 
     (puploc) => {
-        std::fs::File::open("./models/pupil.localizer.bin")
-            .expect("cannot open puploc model file")
+        std::fs::File::open("./models/pupil.localizer.bin").expect("cannot open puploc model file")
     };
 
     (shaper) => {
-        std::fs::File::open("./models/face-5.shaper.bin")
-            .expect("cannot open shaper model file")
+        std::fs::File::open("./models/face-5.shaper.bin").expect("cannot open shaper model file")
     };
 }
 
@@ -47,12 +45,10 @@ macro_rules! load_model {
     };
 
     (puploc) => {
-        pico_detect::Localizer::load(model_file!(puploc))
-            .expect("failed to load puploc model")
+        pico_detect::Localizer::load(model_file!(puploc)).expect("failed to load puploc model")
     };
 
     (shaper) => {
-        pico_detect::Shaper::load(model_file!(shaper))
-            .expect("failed to load shaper model")
-    }
+        pico_detect::Shaper::load(model_file!(shaper)).expect("failed to load shaper model")
+    };
 }

@@ -1,11 +1,12 @@
 mod localizer;
 pub mod perturbate;
 
-use image::{GenericImageView, Luma};
+use image::Luma;
 pub use localizer::Localizer;
 
 use nalgebra::Point2;
 use perturbate::Perturbator;
+use pixelutil_image::ExtendedImageView;
 use rand::RngCore;
 
 use crate::Target;
@@ -52,7 +53,7 @@ impl LocalizePerturbate {
     ) -> Point2<f32>
     where
         R: RngCore,
-        I: GenericImageView<Pixel = Luma<u8>>,
+        I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         let mut xs: Vec<f32> = Vec::with_capacity(self.runs);
         let mut ys: Vec<f32> = Vec::with_capacity(self.runs);

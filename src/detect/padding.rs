@@ -31,37 +31,59 @@ impl Padding {
     /// Set the right padding value.
     #[inline]
     pub fn right(self, value: i32) -> Self {
-        Self { right: value, ..self }
+        Self {
+            right: value,
+            ..self
+        }
     }
 
     /// Set the bottom padding value.
     #[inline]
     pub fn bottom(self, value: i32) -> Self {
-        Self { bottom: value, ..self }
+        Self {
+            bottom: value,
+            ..self
+        }
     }
 
     /// Create padding with the same value for all sides.
     #[inline]
     pub fn all(value: i32) -> Self {
-        Self { top: value, right: value, bottom: value, left: value }
+        Self {
+            top: value,
+            right: value,
+            bottom: value,
+            left: value,
+        }
     }
 
     /// Set vertical padding (top and bottom).
     #[inline]
     pub fn vertical(self, value: i32) -> Self {
-        Self { top: value, bottom: value, ..self }
+        Self {
+            top: value,
+            bottom: value,
+            ..self
+        }
     }
 
     /// Set horizontal padding (left and right).
     #[inline]
     pub fn horizontal(self, value: i32) -> Self {
-        Self { right: value, left: value, ..self }
+        Self {
+            right: value,
+            left: value,
+            ..self
+        }
     }
 
     /// Set the left padding value.
     #[inline]
     pub fn left(self, value: i32) -> Self {
-        Self { left: value, ..self }
+        Self {
+            left: value,
+            ..self
+        }
     }
 
     /// Convert padding to a rectangle.

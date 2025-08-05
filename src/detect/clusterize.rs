@@ -56,13 +56,13 @@ impl Default for Clusterizer {
 }
 
 /// Clusterize detection results based on intersection and score thresholds.
-/// 
+///
 /// ### Arguments
-/// 
+///
 /// * `data` -- mutable slice of detection data to clusterize;
 /// * `intersection_threshold` -- threshold for intersection over union;
 /// * `score_threshold` -- threshold for detection score;
-/// * `dest` -- destination vector to store clustered detections. 
+/// * `dest` -- destination vector to store clustered detections.
 #[inline]
 pub fn clusterize<R: Region + Copy>(
     data: &mut [Detection<R>],

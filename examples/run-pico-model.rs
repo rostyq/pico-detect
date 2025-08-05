@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
-use pico_detect::{Square, Detector, Localizer, Shaper};
+use pico_detect::{Detector, Localizer, Shaper, Square};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 enum ModelType {
