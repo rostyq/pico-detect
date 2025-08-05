@@ -8,11 +8,12 @@ use std::{
     io::{Error, ErrorKind, Read},
 };
 
-use image::{GenericImageView, Luma};
+use image::Luma;
 use imageproc::rect::Rect;
 use nalgebra::{Affine2, DimName, Matrix3, Point2, SimilarityMatrix2, U2};
 
 use forest::ShaperForest;
+use pixelutil_image::ExtendedImageView;
 
 /// Implements object alignment using an ensemble of regression trees.
 #[derive(Clone)]
@@ -61,7 +62,7 @@ impl Shaper {
         reader.read_exact(&mut buf)?;
         let ncols = u32::from_be_bytes(buf) as usize;
 
-        let shape_size = nrows * ncols / U2::USIZE;
+        let shape_size = nrows * ncols / U2::DIM;
 
         reader.read_exact(&mut buf)?;
         let nforests = u32::from_be_bytes(buf) as usize;
@@ -118,7 +119,7 @@ impl Shaper {
     #[inline]
     pub fn shape<I>(&self, image: &I, rect: Rect) -> Vec<Point2<f32>>
     where
-        I: GenericImageView<Pixel = Luma<u8>>,
+        I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         let mut shape = self.shape.clone();
 

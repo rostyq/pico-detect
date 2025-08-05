@@ -1,8 +1,9 @@
 use std::fmt::Debug;
 use std::io::{Error, Read};
 
-use image::{GenericImageView, Luma};
+use image::Luma;
 use nalgebra::{Point2, Translation2, Vector2};
+use pixelutil_image::ExtendedImageView;
 
 use crate::geometry::Target;
 use crate::nodes::ComparisonNode;
@@ -44,7 +45,7 @@ impl Localizer {
     #[inline]
     pub fn localize<I>(&self, image: &I, roi: Target) -> Point2<f32>
     where
-        I: GenericImageView<Pixel = Luma<u8>>,
+        I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         let Target {
             mut point,

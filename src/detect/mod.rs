@@ -5,8 +5,9 @@ mod padding;
 pub mod clusterize;
 pub mod multiscale;
 
-use image::{GenericImageView, Luma};
 use derive_builder::Builder;
+use image::Luma;
+use pixelutil_image::ExtendedImageView;
 
 use crate::geometry::Target;
 
@@ -43,15 +44,16 @@ impl DetectMultiscale {
     #[inline]
     pub fn run<I>(&self, detector: &Detector, image: &I) -> Vec<Detection<Target>>
     where
-        I: GenericImageView<Pixel = Luma<u8>>,
+        I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         let mut detections = Vec::new();
-        
-        self.multiscaler.run(self.padding.image_rect(image), |region| {
-            if let Some(detection) = detector.detect(image, region) {
-                detections.push(detection);
-            }
-        });
+
+        self.multiscaler
+            .run(self.padding.image_rect(image), |region| {
+                if let Some(detection) = detector.detect(image, region) {
+                    detections.push(detection);
+                }
+            });
 
         let mut clusters = Vec::new();
 

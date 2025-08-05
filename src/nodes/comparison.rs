@@ -1,7 +1,7 @@
-use image::{GenericImageView, Luma};
+use image::Luma;
 use nalgebra::Point2;
 
-use pixelutil_image::clamp_pixel_unchecked;
+use pixelutil_image::ExtendedImageView;
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct ComparisonNode(pub Point2<i8>, pub Point2<i8>);
@@ -43,7 +43,7 @@ impl From<ComparisonNode> for [u8; 4] {
 
 impl ComparisonNode {
     #[inline]
-    pub fn bintest<I: GenericImageView<Pixel = Luma<u8>>>(
+    pub fn bintest<I: ExtendedImageView<Pixel = Luma<u8>>>(
         &self,
         image: &I,
         point: Point2<i32>,
@@ -52,8 +52,8 @@ impl ComparisonNode {
         let p0 = transform(point, size, self.0.cast());
         let p1 = transform(point, size, self.1.cast());
 
-        let lum0 = unsafe { clamp_pixel_unchecked(image, p0.x, p0.y) }.0[0];
-        let lum1 = unsafe { clamp_pixel_unchecked(image, p1.x, p1.y) }.0[0];
+        let [lum0] = image.get_pixel_clamped(p0).0;
+        let [lum1] = image.get_pixel_clamped(p1).0;
 
         lum0 > lum1
     }

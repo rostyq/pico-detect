@@ -3,7 +3,8 @@ mod tree;
 use std::fmt::Debug;
 use std::io::{Error, Read};
 
-use image::{GenericImageView, Luma};
+use image::Luma;
+use pixelutil_image::ExtendedImageView;
 
 use crate::geometry::Square;
 use crate::traits::Region;
@@ -47,7 +48,7 @@ impl Detector {
     #[inline]
     pub fn classify<I>(&self, image: &I, region: Square) -> Option<f32>
     where
-        I: GenericImageView<Pixel = Luma<u8>>,
+        I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         let mut result = 0.0f32;
         let point = region.center();
@@ -70,7 +71,7 @@ impl Detector {
     #[inline]
     pub fn detect<I>(&self, image: &I, region: Square) -> Option<Detection<Square>>
     where
-        I: GenericImageView<Pixel = Luma<u8>>,
+        I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         self.classify(image, region)
             .map(|score| Detection { region, score })
@@ -100,10 +101,7 @@ impl Detector {
             trees.push(DetectorTree::load(&mut readable, tree_size)?);
         }
 
-        let threshold = trees
-            .last()
-            .ok_or(Error::other("No trees"))?
-            .threshold;
+        let threshold = trees.last().ok_or(Error::other("No trees"))?.threshold;
 
         Ok(Self {
             depth,
