@@ -55,7 +55,10 @@ impl ShaperForest {
                 let point =
                     Point2::from(unsafe { point.coords.try_cast::<i32>().unwrap_unchecked() });
 
-                image.get_pixel_at(point).map(|p| p.0[0]).unwrap_or(0u8)
+                image
+                    .get_pixel_at(point)
+                    .map(|Luma([value])| value)
+                    .unwrap_or(0u8)
             })
             .collect()
     }

@@ -52,8 +52,8 @@ impl ComparisonNode {
         let p0 = transform(point, size, self.0.cast());
         let p1 = transform(point, size, self.1.cast());
 
-        let [lum0] = image.get_pixel_clamped(p0).0;
-        let [lum1] = image.get_pixel_clamped(p1).0;
+        let Luma([lum0]) = image.get_pixel_clamped(p0);
+        let Luma([lum1]) = image.get_pixel_clamped(p1);
 
         lum0 > lum1
     }
