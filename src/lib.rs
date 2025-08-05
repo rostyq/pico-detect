@@ -1,4 +1,5 @@
 pub extern crate image;
+pub extern crate pixelutil_image;
 pub extern crate imageproc;
 pub extern crate nalgebra;
 pub extern crate rand;
