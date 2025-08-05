@@ -23,7 +23,7 @@ rand = "0.9"
 similarity-least-squares = "0.4"
 rand_xoshiro = "0.7"
 derive_builder = "0.12"
-pixelutil-image = { version = "0.3", features = ["nalgebra"] }
+pixelutil-image = { version = "0.4", features = ["nalgebra"] }
 thiserror = "2"
 
 [dev-dependencies]
