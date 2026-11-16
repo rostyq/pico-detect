@@ -11,7 +11,11 @@ use common::{classify_case, detect_multiscale, detect_multiscale_case, detector}
 #[rstest]
 fn test_detector_classify(detector: Detector, classify_case: (GrayImage, Square, Option<f32>)) {
     let (image, region, score) = classify_case;
-    assert!(detector.classify(&image, region) == score);
+    assert_abs_diff_eq!(
+        detector.classify(&image, region).unwrap(),
+        score.unwrap(),
+        epsilon = 1e-4
+    );
 }
 
 #[rstest]

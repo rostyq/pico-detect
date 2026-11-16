@@ -7,8 +7,6 @@ use pico_detect::{
 };
 use std::path::PathBuf;
 
-use crate::{load_model, localizer, shaper};
-
 #[derive(Parser, Debug)]
 #[command(author, version, about = "CLI human face detection using PICO models.")]
 pub struct Args {
