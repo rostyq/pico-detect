@@ -61,7 +61,7 @@ pub fn classify_case(test_image: GrayImage) -> (GrayImage, Square, Option<f32>) 
     (
         test_image,
         Square::at(216, 208).of_size(170),
-        Some(2.4434934),
+        Some(2.9913146),
     )
 }
 
@@ -72,11 +72,11 @@ pub fn localize_case(test_image: GrayImage) -> (GrayImage, [(Square, Point2<f32>
         [
             (
                 Square::at(321, 259).of_size(15),
-                Point2::new(326.8915, 266.5068),
+                Point2::new(326.1010, 265.2927),
             ),
             (
                 Square::at(259, 259).of_size(15),
-                Point2::new(266.5190, 267.5272),
+                Point2::new(265.7270, 268.3979),
             ),
         ],
     )
@@ -88,11 +88,11 @@ pub fn shaper_case(test_image: GrayImage) -> (GrayImage, Square, Vec<Point2<f32>
         test_image,
         Square::at(213, 225).of_size(153),
         vec![
-            [341.8397, 269.6037].into(),
-            [318.1169, 272.2306].into(),
-            [253.2326, 266.5196].into(),
-            [284.6829, 271.6468].into(),
-            [306.5808, 331.5721].into(),
+            [341.6172, 269.3175].into(),
+            [317.8699, 271.5850].into(),
+            [253.1032, 266.2115].into(),
+            [284.2924, 271.0074].into(),
+            [306.1782, 331.1190].into(),
         ],
     )
 }
@@ -160,7 +160,7 @@ pub fn localize_perturbate_case(test_image: GrayImage) -> (GrayImage, [(Square, 
 pub fn detect_multiscale_case(test_image: GrayImage) -> (GrayImage, Vec<(Target, f32)>) {
     (
         test_image,
-        vec![(Target::new(289.7143, 302.0000, 154.5714), 38.2221)],
+        vec![(Target::new(292.4412, 300.9706, 161.7059), 39.9324)],
     )
 }
 
