@@ -1,7 +1,6 @@
 [package]
 name = "pico-detect"
 version = "0.7.0"
-authors = ["Rostyslav Bohomaz <rostyslav.db@gmail.com>"]
 edition = "2018"
 keywords = ["pico", "detection", "localization", "prediction"]
 categories = ["computer-vision", "wasm"]
@@ -16,14 +15,14 @@ name = "pico_detect"
 bench = false
 
 [dependencies]
-nalgebra = { version = "0.34", default-features = false, features = ["std"] }
-image = { version = "0.25", default-features = false }
+nalgebra = { version = "0.35", default-features = false, features = ["std"] }
+image = { version = "=0.25", default-features = false }
 imageproc = { version = "0.25", default-features = false }
 rand = "0.9"
-similarity-least-squares = "0.4"
+similarity-least-squares = "0.5"
 rand_xoshiro = "0.7"
 derive_builder = "0.12"
-pixelutil-image = { version = "0.4", features = ["nalgebra"] }
+pixelutil-image = { version = "0.5", features = ["nalgebra"] }
 thiserror = "2"
 
 [dev-dependencies]
