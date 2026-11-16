@@ -5,7 +5,7 @@ use std::{
 
 use rand::{
     distr::{uniform::Error, Uniform},
-    Rng, RngCore,
+    Rng, RngExt,
 };
 
 use crate::geometry::Target;
@@ -46,7 +46,7 @@ impl Perturbator {
     #[inline]
     pub fn run<R, F>(&self, rng: &mut R, count: usize, init: Target, f: F)
     where
-        R: RngCore,
+        R: Rng + ?Sized,
         F: FnMut(Target),
     {
         perturbate(rng, self.scale, self.translate, count, init, f)
@@ -72,7 +72,7 @@ pub fn perturbate<R, F>(
     init: Target,
     mut f: F,
 ) where
-    R: RngCore,
+    R: Rng + ?Sized,
     F: FnMut(Target),
 {
     let size = init.size();

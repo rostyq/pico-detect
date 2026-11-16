@@ -7,7 +7,7 @@ pub use localizer::Localizer;
 use nalgebra::Point2;
 use perturbate::Perturbator;
 use pixelutil_image::ExtendedImageView;
-use rand::RngCore;
+use rand::Rng;
 
 use crate::Target;
 
@@ -52,7 +52,7 @@ impl LocalizePerturbate {
         target: Target,
     ) -> Point2<f32>
     where
-        R: RngCore,
+        R: Rng + ?Sized,
         I: ExtendedImageView<Pixel = Luma<u8>>,
     {
         let mut xs: Vec<f32> = Vec::with_capacity(self.runs);
