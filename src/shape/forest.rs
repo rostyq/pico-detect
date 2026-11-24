@@ -52,8 +52,8 @@ impl ShaperForest {
                 let point = unsafe { shape.get_unchecked(delta.anchor()) };
                 let point = point + transform_to_shape.transform_vector(delta.value());
                 let point = transform_to_image * point;
-                let point =
-                    Point2::from(unsafe { point.coords.try_cast::<i32>().unwrap_unchecked() });
+                // Round to the nearest pixel (as dlib does) instead of truncating.
+                let point = Point2::from(point.coords.map(|v| (v + 0.5).floor() as i32));
 
                 image
                     .get_pixel_at(point)

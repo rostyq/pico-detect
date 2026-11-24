@@ -168,14 +168,19 @@ impl Shaper {
     }
 }
 
+/// Maps the normalized shape space onto the image region.
+///
+/// Matches dlib's `unnormalizing_tform`: the unit square is mapped onto the
+/// region corners, i.e. `(0, 0)` to `(left, top)` and `(1, 1)` to
+/// `(right, bottom)`, where `right` and `bottom` are inclusive.
 #[inline]
 fn find_transform_to_image(rect: Rect) -> Affine2<f32> {
     Affine2::from_matrix_unchecked(Matrix3::new(
-        rect.width() as f32,
+        (rect.right() - rect.left()) as f32,
         0.0,
         rect.left() as f32,
         0.0,
-        rect.height() as f32,
+        (rect.bottom() - rect.top()) as f32,
         rect.top() as f32,
         0.0,
         0.0,
